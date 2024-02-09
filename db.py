@@ -1,5 +1,7 @@
 import psycopg2
-from db_executable import sql_query
+#from db_executable import sql_query
+from create_tables import sql_query
+
 
 # This connection string should match the one in your Python code
 conn_string = "host='localhost' dbname='my_db' user='starky' password='1234'"
