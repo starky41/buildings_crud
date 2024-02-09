@@ -31,7 +31,7 @@ sql_create_tables = """
     
     CREATE TABLE IF NOT EXISTS building_roof(
         ID_building_roof INT PRIMARY KEY,
-        building_floor_name VARCHAR(150)
+        building_roof_name VARCHAR(150)
     );
     
     CREATE TABLE IF NOT EXISTS building_floor(
