@@ -46,22 +46,29 @@ table_definitions = {
 # Function to generate CREATE TABLE SQL statement for a given table
 def create_table_sql(table_name, column_definitions, foreign_key_constraints=""):
     columns_sql = ",\n    ".join(f"{column_name} {data_type}" for column_name, data_type in column_definitions.items())
+
+    foreign_key_sql = ""
     if foreign_key_constraints:
         foreign_key_sql = ",\n    " + foreign_key_constraints
-    else:
-        foreign_key_sql = ""
 
-    create_table_statement = f"""CREATE TABLE IF NOT EXISTS {table_name}(
+    create_table_statement = f"""CREATE TABLE IF NOT EXISTS {table_name} (
     {columns_sql}{foreign_key_sql}
 );"""
 
     return create_table_statement
 
 
-# Generate all CREATE TABLE SQL statements
+# Assume table_definitions was defined somewhere, otherwise this will not work
 sql_create_tables = "".join(create_table_sql(name, fields) for name, fields in table_definitions.items())
 
-foreign_keys = [
+
+# Function to create foreign key SQL string
+def create_foreign_key(column, referenced_table):
+    return f"FOREIGN KEY ({column}) REFERENCES {referenced_table}({column})"
+
+
+# SQL for building_description table with foreign keys
+foreign_keys_building_description = [
     ('ID_street', 'street'),
     ('ID_type_construction', 'type_construction'),
     ('ID_basic_project', 'basic_project'),
@@ -74,14 +81,9 @@ foreign_keys = [
     ('ID_management_company', 'management_company'),
 ]
 
-
-# Function to create foreign key SQL string
-def create_foreign_key(column, referenced_table):
-    return f"FOREIGN KEY ({column}) REFERENCES {referenced_table}({column})"
-
-
-# Construct the foreign key constraints SQL by joining the definitions with commas
-foreign_key_sql = ",\n    ".join(create_foreign_key(column, table) for column, table in foreign_keys)
+foreign_key_sql_building_description = ",\n    ".join(
+    create_foreign_key(column, table) for column, table in foreign_keys_building_description
+)
 
 # Here's how you might include this within the create_table_sql:
 sql_create_building_description = create_table_sql("building_description", {
@@ -122,9 +124,24 @@ sql_create_building_description = create_table_sql("building_description", {
     "Land_area": "NUMERIC",
     "notes": "VARCHAR(150)",
     "author": "VARCHAR(150)"
-}, foreign_key_constraints=foreign_key_sql)
+}, foreign_key_constraints=foreign_key_sql_building_description)
 
+# SQL for wear_rate table with foreign key
+foreign_keys_wear_rate = [
+    ('ID_building', 'building_description')
+]
+foreign_key_sql_wear_rate = ",\n    ".join(
+    create_foreign_key(column, table) for column, table in foreign_keys_wear_rate
+)
+sql_create_wear_rate = create_table_sql("wear_rate", {
+    "ID_wear_rate": "INT PRIMARY KEY",
+    "date": 'DATE',
+    "wear_rate_name": "VARCHAR(150)",
+    "ID_building": "INT"
+}, foreign_key_constraints=foreign_key_sql_wear_rate)
 
-sql_query = sql_create_tables + sql_create_building_description
+# Final SQL query
+sql_query = f"{sql_create_tables}\n{sql_create_building_description}\n{sql_create_wear_rate}"
 
-
+# Print or execute SQL queries as needed
+print(sql_query)

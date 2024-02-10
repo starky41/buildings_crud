@@ -1,5 +1,4 @@
 import psycopg2
-#from db_executable import sql_query
 from create_tables import sql_query
 
 
@@ -15,11 +14,11 @@ cursor = conn.cursor()
 
 cursor.execute(
     '''DROP TABLE IF EXISTS street, type_construction, basic_project, appointment, load_bearing_walls, building_roof, 
-    building_floor, facade, foundation, management_company, building_description CASCADE;
-    
+    building_floor, facade, foundation, management_company, building_description, wear_rate CASCADE;
     '''
-
 )
+
+
 cursor.execute(sql_query)
 
 conn.commit()
