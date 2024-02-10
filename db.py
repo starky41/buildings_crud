@@ -22,6 +22,5 @@ cursor.execute(
 cursor.execute(sql_query)
 
 conn.commit()
-
 cursor.close()
 conn.close()
