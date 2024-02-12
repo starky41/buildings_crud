@@ -18,9 +18,9 @@ def init_db():
     import models
     Base.metadata.create_all(bind=engine)
 
-# for testing purposes only
-Base.metadata.drop_all(engine)
+    # for testing purposes only
+    Base.metadata.drop_all(engine)
 
 
-# Create all tables in the engine. This is equivalent to "Create Table" statements in raw SQL.
-Base.metadata.create_all(engine)
+    # Create all tables in the engine. This is equivalent to "Create Table" statements in raw SQL.
+    Base.metadata.create_all(engine)
