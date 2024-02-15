@@ -1,6 +1,6 @@
 from database import init_db, db_session
 from data_access_layer import DataAccessLayer
-
+from gui import QApplication, MyApp
 # Initialize the database (create tables if they don't exist)
 init_db()
 
@@ -9,12 +9,14 @@ dal = DataAccessLayer(db_session)
 
 def main():
     from models import Appointment
+    
     # Usage:
     dal = DataAccessLayer(db_session)
+    
 
     # Create operation example
-    new_appointment = Appointment(ID_appointment=2, appointment_name='yasss1')
-    dal.create(new_appointment)
+    # new_appointment = Appointment(appointment_name='test_appointment1')
+    # dal.create(new_appointment)
 
     # Read operation example
     appointments = dal.read(Appointment)
@@ -27,4 +29,10 @@ def main():
     # dal.delete(Appointment, ID_building=1)
 
 if __name__ == "__main__":
+    
     main()
+    app = QApplication([]) 
+    window = MyApp()
+    window.show()
+    app.exec()
+    

@@ -4,58 +4,58 @@ from database import Base
 
 class Street(Base):
     __tablename__ = 'street'
-    ID_street = Column(Integer, primary_key=True)
-    street_name = Column(String(150))
+    ID_street = Column(Integer, primary_key=True, autoincrement=True) 
+    street_name = Column(String(150), unique=True)
 
 class TypeConstruction(Base):
     __tablename__ = 'type_construction'
-    ID_type_construction = Column(Integer, primary_key=True)
-    type_construction_name = Column(String(150))
+    ID_type_construction = Column(Integer, primary_key=True, autoincrement=True)
+    type_construction_name = Column(String(150), unique=True)
 
 class BasicProject(Base):
     __tablename__ = 'basic_project'
-    ID_basic_project = Column(Integer, primary_key=True)
-    basic_project_name = Column(String(150))
+    ID_basic_project = Column(Integer, primary_key=True, autoincrement=True)
+    basic_project_name = Column(String(150), unique=True)
 
 class Appointment(Base):
     __tablename__ = 'appointment'
-    ID_appointment = Column(Integer, primary_key=True)
-    appointment_name = Column(String(150))
+    ID_appointment = Column(Integer, primary_key=True, autoincrement=True)
+    appointment_name = Column(String(150), unique=True)
 
 class LoadBearingWalls(Base):
     __tablename__ = 'load_bearing_walls'
-    ID_load_bearing_walls = Column(Integer, primary_key=True)
-    load_bearing_walls_name = Column(String(150))
+    ID_load_bearing_walls = Column(Integer, primary_key=True, autoincrement=True)
+    load_bearing_walls_name = Column(String(150), unique=True)
 
 class BuildingRoof(Base):
     __tablename__ = 'building_roof'
-    ID_building_roof = Column(Integer, primary_key=True)
-    building_roof_name = Column(String(150))
+    ID_building_roof = Column(Integer, primary_key=True, autoincrement=True)
+    building_roof_name = Column(String(150), unique=True)
 
 class BuildingFloor(Base):
     __tablename__ = 'building_floor'
-    ID_building_floor = Column(Integer, primary_key=True)
-    building_floor_name = Column(String(150))
+    ID_building_floor = Column(Integer, primary_key=True, autoincrement=True)
+    building_floor_name = Column(String(150), unique=True)
 
 class Facade(Base):
     __tablename__ = 'facade'
-    ID_facade = Column(Integer, primary_key=True)
-    facade_name = Column(String(150))
+    ID_facade = Column(Integer, primary_key=True, autoincrement=True)
+    facade_name = Column(String(150), unique=True)
 
 class Foundation(Base):
     __tablename__ = 'foundation'
-    ID_foundation = Column(Integer, primary_key=True)
-    foundation_name = Column(String(150))
+    ID_foundation = Column(Integer, primary_key=True, autoincrement=True)
+    foundation_name = Column(String(150), unique=True)
 
 class ManagementCompany(Base):
     __tablename__ = 'management_company'
-    ID_management_company = Column(Integer, primary_key=True)
-    management_company_name = Column(String(150))
+    ID_management_company = Column(Integer, primary_key=True, autoincrement=True)
+    management_company_name = Column(String(150), unique=True)
 
 class BuildingDescription(Base):
     __tablename__ = 'building_description'
 
-    ID_building = Column(Integer, primary_key=True)
+    ID_building = Column(Integer, primary_key=True, autoincrement=True)
     ID_street = Column(Integer, ForeignKey('street.ID_street'))
     house = Column(Integer)
     building_body = Column(Integer)
@@ -105,17 +105,13 @@ class BuildingDescription(Base):
     foundation = relationship('Foundation')
     management_company = relationship('ManagementCompany')
 
-
 class WearRate(Base):
     __tablename__ = 'wear_rate'
-
-    ID_wear_rate = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True)
     date = Column(Date)
     wear_rate_name = Column(String(150))
     ID_building = Column(Integer, ForeignKey('building_description.ID_building'))
 
     # Relationship to access building_description records from a wear_rate instance
     building_description = relationship('BuildingDescription')
-
-
 

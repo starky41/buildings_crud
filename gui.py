@@ -49,33 +49,55 @@ class MyApp(QMainWindow):
         section1.addLayout(buildingNrLayout)
 
         section1ButtonsLayout = QHBoxLayout()
-        section1ButtonsLayout.addWidget(QPushButton("Найти"))
-        section1ButtonsLayout.addWidget(QPushButton("Добавить"))
+        findButton = QPushButton("Найти")
+        findButton.clicked.connect(self.showFindResults)
+        addButton = QPushButton("Добавить")
+        addButton.clicked.connect(self.showAdditionFields)
+        section1ButtonsLayout.addWidget(findButton)
+        section1ButtonsLayout.addWidget(addButton)
         section1ButtonsLayout.addWidget(QPushButton("Удалить"))
         section1.addLayout(section1ButtonsLayout)
         tab1Layout.addLayout(section1)
 
-        # Second Section
-        section2 = QVBoxLayout()
-        textFields = [QLineEdit() for _ in range(6)]
-        for textField in textFields:
-            section2.addWidget(textField)
-        wearRateButton = QPushButton('Степень износа')
-        wearRateButton.clicked.connect(self.showWearRateWindow)
-        section2.addWidget(wearRateButton)
+        # Second Section (Initially hidden)
+        self.section2Wrapper = QWidget()  # Wrapper to control visibility
+        self.section2 = QVBoxLayout()
+        self.section2Wrapper.setLayout(self.section2)
+        self.textFields = [QLineEdit() for _ in range(6)]
+        self.section2Widgets = self.textFields  # Store reference to add/remove later
+        self.wearRateButton = QPushButton('Степень износа')
+        self.wearRateButton.clicked.connect(self.showWearRateWindow)
+        self.section2.addWidget(self.wearRateButton)
 
-        section2ButtonsLayout = QHBoxLayout()
-        section2ButtonsLayout.addWidget(QPushButton("Редактировать"))
-        section2ButtonsLayout.addWidget(QPushButton("Сохранить"))
-        section2.addLayout(section2ButtonsLayout)
-        tab1Layout.addLayout(section2)
+        self.section2ButtonsLayout = QHBoxLayout()
+        self.section2ButtonsLayout.addWidget(QPushButton("Редактировать"))
+        self.section2ButtonsLayout.addWidget(QPushButton("Сохранить"))
+        self.section2.addLayout(self.section2ButtonsLayout)
+        tab1Layout.addWidget(self.section2Wrapper)
+        self.section2Wrapper.setVisible(False)  # Start with the section hidden
+
+    def showFindResults(self):
+        # Clear the second section and show a label with some text
+        for widget in self.section2Widgets:
+            self.section2.removeWidget(widget)
+            widget.deleteLater()
+        self.section2Widgets = [QLabel("Results of the search will be displayed here.")]
+        for widget in self.section2Widgets:
+            self.section2.addWidget(widget)
+        self.section2Wrapper.setVisible(True)
+
+    def showAdditionFields(self):
+        # Clear the second section and add the text fields
+        for widget in self.section2Widgets:
+            self.section2.removeWidget(widget)
+            widget.deleteLater()
+        self.section2Widgets = [QLineEdit() for _ in range(6)]
+        for widget in self.section2Widgets:
+            self.section2.addWidget(widget)
+        self.section2Wrapper.setVisible(True)
 
     def showWearRateWindow(self):
         self.wearRateWindow = WearRateWindow()
         self.wearRateWindow.show()
 
-if __name__ == '__main__':
-    app = QApplication([]) 
-    window = MyApp()
-    window.show()
-    app.exec()
+
