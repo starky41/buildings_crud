@@ -17,6 +17,7 @@ class MyApp(QMainWindow):
         self.setWindowTitle('My Application')
         self.initUI()
         self.section2Widgets = []  # Define section2Widgets as an empty list
+        self.windows = []
 
     def initUI(self):
         self.setupCentralWidget()
@@ -48,8 +49,11 @@ class MyApp(QMainWindow):
         self.setupTab1SearchSection(tab1Layout)
         self.setupTab1SecondSection(tab1Layout)
 
+    
     def setupTab1SearchSection(self, layout):
+        from PyQt6.QtCore import Qt
         self.section1 = QVBoxLayout()
+        self.section1.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
         self.section1.addWidget(QLabel("Поиск"))
         self.addSearchField("Улица", self.section1)
         self.addSearchField("Номер", self.section1)
@@ -88,8 +92,34 @@ class MyApp(QMainWindow):
         self.section2Wrapper.setVisible(False)
 
     def setupTab2(self):
-        # Setup for the second tab (if any) goes here
-        pass
+        # Setup for the second tab with buttons in a grid layout
+        self.tab2Layout = QGridLayout()
+        self.tab2.setLayout(self.tab2Layout)
+        self.tab2Layout.setSpacing(10)  # Reduce spacing between buttons
+
+        # Define button labels
+        buttonNames = [
+            "Улица", "Тип конструкции", "Типовой проект", "Назначение",
+            "Несущие стены", "Крыша", "Перекрытия", "Фасад",
+            "Фундамент", "Управляющая компания", "Описание здания"
+        ]
+
+        # Calculate number of rows and columns for the grid
+        buttonsPerRow = 3  # Increase buttons per row for a more compact layout
+        for index, name in enumerate(buttonNames):
+            button = QPushButton(name)
+            button.setFixedSize(150, 40)  # Standardize button size
+            row, col = divmod(index, buttonsPerRow)
+            button.clicked.connect(lambda checked, name=name: self.openCrudWindow(name))
+            self.tab2Layout.addWidget(button, row, col)
+
+    def openCrudWindow(self, name):
+        crud_window = WearRateWindow()
+        crud_window.setWindowTitle(name)
+        crud_window.show()
+        self.windows.append(crud_window)  # Keep a reference to the window to prevent premature garbage collection
+
+
 
     def addFunction(self):
         if not self.addButtonClicked:
