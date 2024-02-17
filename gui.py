@@ -19,68 +19,77 @@ class MyApp(QMainWindow):
         self.section2Widgets = []  # Define section2Widgets as an empty list
 
     def initUI(self):
-        
-        centralWidget = QWidget()
-        self.setCentralWidget(centralWidget)
-        layout = QVBoxLayout()
-        centralWidget.setLayout(layout)
+        self.setupCentralWidget()
+        self.configureMainWindow()
+        self.createTabs()
+        self.setupTab1()
+        self.setupTab2()
+
+    def setupCentralWidget(self):
+        self.centralWidget = QWidget()
+        self.setCentralWidget(self.centralWidget)
+        self.layout = QVBoxLayout()
+        self.centralWidget.setLayout(self.layout)
+
+    def configureMainWindow(self):
         self.resize(800, 600)
-        tabWidget = QTabWidget()
-        tab1 = QWidget()
-        tab2 = QWidget()  # Placeholder for the second tab
-        tabWidget.addTab(tab1, "Поиск")
-        tabWidget.addTab(tab2, "Справочник")
-        layout.addWidget(tabWidget)
 
+    def createTabs(self):
+        self.tabWidget = QTabWidget()
+        self.tab1 = QWidget()
+        self.tab2 = QWidget()
+        self.tabWidget.addTab(self.tab1, "Поиск")
+        self.tabWidget.addTab(self.tab2, "Справочник")
+        self.layout.addWidget(self.tabWidget)
+
+    def setupTab1(self):
         tab1Layout = QHBoxLayout()
-        tab1.setLayout(tab1Layout)
+        self.tab1.setLayout(tab1Layout)
+        self.setupTab1SearchSection(tab1Layout)
+        self.setupTab1SecondSection(tab1Layout)
 
-        # First Section
+    def setupTab1SearchSection(self, layout):
         self.section1 = QVBoxLayout()
         self.section1.addWidget(QLabel("Поиск"))
-        streetLayout = QHBoxLayout()
-        streetLabel = QLabel("Улица")
-        streetLineEdit = QLineEdit()
-        streetLayout.addWidget(streetLabel)
-        streetLayout.addWidget(streetLineEdit)
-        self.section1.addLayout(streetLayout)
+        self.addSearchField("Улица", self.section1)
+        self.addSearchField("Номер", self.section1)
+        self.addSection1Buttons(self.section1)
+        layout.addLayout(self.section1)
 
-        buildingNrLayout = QHBoxLayout()
-        buildingNrLabel = QLabel("Номер")
-        buildingNrLineEdit = QLineEdit()
-        buildingNrLayout.addWidget(buildingNrLabel)
-        buildingNrLayout.addWidget(buildingNrLineEdit)
-        self.section1.addLayout(buildingNrLayout)
+    def addSearchField(self, label, layout):
+        fieldLayout = QHBoxLayout()
+        fieldLabel = QLabel(label)
+        fieldLineEdit = QLineEdit()
+        fieldLayout.addWidget(fieldLabel)
+        fieldLayout.addWidget(fieldLineEdit)
+        layout.addLayout(fieldLayout)
 
+    def addSection1Buttons(self, layout):
         self.section1ButtonsLayout = QHBoxLayout()
         findButton = QPushButton("Найти")
         findButton.clicked.connect(self.showFindResults)
         self.addButton = QPushButton("Добавить", self)
         self.addButton.clicked.connect(self.addFunction)
-
-        centralWidget = QWidget()
-
         self.section1ButtonsLayout.addWidget(findButton)
         self.section1ButtonsLayout.addWidget(self.addButton)
         self.section1ButtonsLayout.addWidget(QPushButton("Удалить"))
-        self.section1.addLayout(self.section1ButtonsLayout)
-        tab1Layout.addLayout(self.section1)
+        layout.addLayout(self.section1ButtonsLayout)
 
-        # Second Section
+    def setupTab1SecondSection(self, layout):
         self.section2 = QVBoxLayout()
-        tab2.setLayout(self.section2)
-
+        self.addButtonClicked = False
         self.section2ButtonsLayout = QHBoxLayout()
         self.section2ButtonsLayout.addWidget(QPushButton("Редактировать"))
         self.section2ButtonsLayout.addWidget(QPushButton("Сохранить"))
         self.section2.addLayout(self.section2ButtonsLayout)
-
         self.section2Wrapper = QWidget()
         self.section2Wrapper.setLayout(self.section2)
-        tab1Layout.addWidget(self.section2Wrapper)
-        self.section2Wrapper.setVisible(False)  # Start with the section hidden
+        layout.addWidget(self.section2Wrapper)
+        self.section2Wrapper.setVisible(False)
 
-        self.addButtonClicked = False
+    def setupTab2(self):
+        # Setup for the second tab (if any) goes here
+        pass
 
     def addFunction(self):
         if not self.addButtonClicked:
