@@ -3,7 +3,7 @@ from PyQt6.QtCore import Qt
 from models import Street, TypeConstruction, BasicProject, Appointment, LoadBearingWalls, BuildingRoof, BuildingFloor, Facade, BuildingDescription, WearRate
 from database import engine, db_session
 from data_access_layer import DataAccessLayer
-
+from sqlalchemy import inspect
 class CrudWindow(QWidget):
     def __init__(self, model_class_name):
         super().__init__()
@@ -42,6 +42,7 @@ class CrudWindow(QWidget):
             self.refreshTable()
 
         self.setLayout(self.layout)
+
     def refreshTable(self):
         model_class = get_model_class(self.model_class_name)
         if model_class:
@@ -70,22 +71,36 @@ class CrudWindow(QWidget):
     from data_access_layer import DataAccessLayer
 
 
+    from sqlalchemy import inspect
+
     def createItem(self):
         model_class = get_model_class(self.model_class_name)
         if model_class:
-            data = self.getFormData(columns=model_class.__table__.columns.keys())
+            # Use SQLAlchemy's inspect function to get the columns
+            inspector = inspect(model_class)
+            columns = [column.name for column in inspector.columns]
+            data = self.getFormData(columns=columns, model_class=model_class)
             new_instance = model_class(**data)
             dal = DataAccessLayer(db_session)
             dal.create(new_instance)
 
-    def getFormData(self, columns):
+
+    def getFormData(self, columns, model_class):
         data = {}
         for i in range(0, len(columns)):
             label = self.layout.itemAt(i * 2).widget()
             line_edit = self.layout.itemAt((i * 2) + 1).widget()
+            
+            table = model_class.__table__
+            primary_key_columns = [col.name for col in table.primary_key]
+            
+            if label.text() in primary_key_columns and table.columns[label.text()].autoincrement:
+                continue  # Skip autoincrement fields
+            
             data[label.text()] = line_edit.text()
+        
         return data
-    
+
 from models import Street, TypeConstruction
 
 def get_model_class(model_class_name):
