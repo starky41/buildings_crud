@@ -3,13 +3,7 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QHBoxLayout
                              QLabel, QLineEdit, QPushButton, QWidget, QTabWidget, QGridLayout)
 from PyQt6.QtGui import QIntValidator, QDoubleValidator
 
-
-class WearRateWindow(QWidget):
-    def __init__(self):
-        super().__init__()
-        self.setWindowTitle('Wear Rate')
-        # Initialize UI components for Wear Rate Window here
-        # ...
+from tab2 import Tab2
 
 class MyApp(QMainWindow):
     def __init__(self):
@@ -24,7 +18,7 @@ class MyApp(QMainWindow):
         self.configureMainWindow()
         self.createTabs()
         self.setupTab1()
-        self.setupTab2()
+        # self.setupTab2()
 
     def setupCentralWidget(self):
         self.centralWidget = QWidget()
@@ -38,7 +32,7 @@ class MyApp(QMainWindow):
     def createTabs(self):
         self.tabWidget = QTabWidget()
         self.tab1 = QWidget()
-        self.tab2 = QWidget()
+        self.tab2 = Tab2(self)
         self.tabWidget.addTab(self.tab1, "Поиск")
         self.tabWidget.addTab(self.tab2, "Справочник")
         self.layout.addWidget(self.tabWidget)
@@ -90,35 +84,6 @@ class MyApp(QMainWindow):
         self.section2Wrapper.setLayout(self.section2)
         layout.addWidget(self.section2Wrapper)
         self.section2Wrapper.setVisible(False)
-
-    def setupTab2(self):
-        # Setup for the second tab with buttons in a grid layout
-        self.tab2Layout = QGridLayout()
-        self.tab2.setLayout(self.tab2Layout)
-        self.tab2Layout.setSpacing(10)  # Reduce spacing between buttons
-
-        # Define button labels
-        buttonNames = [
-            "Улица", "Тип конструкции", "Типовой проект", "Назначение",
-            "Несущие стены", "Крыша", "Перекрытия", "Фасад",
-            "Фундамент", "Управляющая компания", "Описание здания"
-        ]
-
-        # Calculate number of rows and columns for the grid
-        buttonsPerRow = 3  # Increase buttons per row for a more compact layout
-        for index, name in enumerate(buttonNames):
-            button = QPushButton(name)
-            button.setFixedSize(150, 40)  # Standardize button size
-            row, col = divmod(index, buttonsPerRow)
-            button.clicked.connect(lambda checked, name=name: self.openCrudWindow(name))
-            self.tab2Layout.addWidget(button, row, col)
-
-    def openCrudWindow(self, name):
-        crud_window = WearRateWindow()
-        crud_window.setWindowTitle(name)
-        crud_window.show()
-        self.windows.append(crud_window)  # Keep a reference to the window to prevent premature garbage collection
-
 
 
     def addFunction(self):
@@ -202,10 +167,6 @@ class MyApp(QMainWindow):
             self.fields_created = True
 
         self.section2Wrapper.setVisible(visibility)
-
-    def showWearRateWindow(self):
-        self.wearRateWindow = WearRateWindow()
-        self.wearRateWindow.show()
 
 
 

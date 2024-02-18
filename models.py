@@ -11,7 +11,7 @@ class TypeConstruction(Base):
     __tablename__ = 'type_construction'
     ID_type_construction = Column(Integer, primary_key=True, autoincrement=True)
     type_construction_name = Column(String(150), unique=True)
-
+    
 class BasicProject(Base):
     __tablename__ = 'basic_project'
     ID_basic_project = Column(Integer, primary_key=True, autoincrement=True)
