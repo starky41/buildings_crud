@@ -1,7 +1,8 @@
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, QPushButton, QLabel, QTableWidget, QTableWidgetItem
 from PyQt6.QtCore import Qt
 from models import Street, TypeConstruction, BasicProject, Appointment, LoadBearingWalls, BuildingRoof, BuildingFloor, Facade, BuildingDescription, WearRate
-from database import engine
+from database import engine, db_session
+from data_access_layer import DataAccessLayer
 
 class CrudWindow(QWidget):
     def __init__(self, model_class_name):
@@ -39,7 +40,7 @@ class CrudWindow(QWidget):
 
             self.setLayout(self.layout)
             self.refreshTable()
-            
+
         self.setLayout(self.layout)
     def refreshTable(self):
         model_class = get_model_class(self.model_class_name)
@@ -66,13 +67,16 @@ class CrudWindow(QWidget):
             headers = [str(col) for col in model_class.__table__.columns.keys()]
             self.table_widget.setHorizontalHeaderLabels(headers)
 
+    from data_access_layer import DataAccessLayer
+
+
     def createItem(self):
         model_class = get_model_class(self.model_class_name)
         if model_class:
             data = self.getFormData(columns=model_class.__table__.columns.keys())
             new_instance = model_class(**data)
-            with engine.connect() as connection:
-                connection.execute(model_class.__table__.insert(), data)
+            dal = DataAccessLayer(db_session)
+            dal.create(new_instance)
 
     def getFormData(self, columns):
         data = {}

@@ -19,8 +19,8 @@ def main():
     # dal.create(new_appointment)
 
     # Read operation example
-    appointments = dal.read(Appointment)
-    specific_appointment = dal.read(Appointment, ID_appointment=2)
+    # appointments = dal.read(Appointment)
+    # specific_appointment = dal.read(Appointment, ID_appointment=2)
 
     # # Update operation example
     # dal.update(Appointment, {'ID_building': 1}, house=11)
