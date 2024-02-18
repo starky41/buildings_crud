@@ -17,9 +17,12 @@ class CrudWindow(QWidget):
         model_class = get_model_class(self.model_class_name)
         if model_class:
             # Get the columns of the model table
-            columns = model_class.__table__.columns.keys()
+            columns = model_class.__table__.columns
+            primary_key_columns = [col.name for col in model_class.__table__.primary_key]
             for column in columns:
-                label = QLabel(str(column))
+                if column.primary_key and column.autoincrement:
+                    continue  # Skip creating LineEdits for autoincrement fields
+                label = QLabel(column.name)
                 line_edit = QLineEdit()
                 self.layout.addWidget(label)
                 self.layout.addWidget(line_edit)
@@ -27,7 +30,6 @@ class CrudWindow(QWidget):
             save_button = QPushButton("Save")
             save_button.clicked.connect(self.createItem)
             self.layout.addWidget(save_button)
-
         
             # Create a QTableWidget to display the database table data
             self.table_widget = QTableWidget()
@@ -84,22 +86,20 @@ class CrudWindow(QWidget):
             dal = DataAccessLayer(db_session)
             dal.create(new_instance)
 
-
     def getFormData(self, columns, model_class):
         data = {}
         for i in range(0, len(columns)):
             label = self.layout.itemAt(i * 2).widget()
-            line_edit = self.layout.itemAt((i * 2) + 1).widget()
+            line_edit = self.layout.itemAt((i * 2) + 1).widget()  # Assuming line_edit is the correct widget type
             
-            table = model_class.__table__
-            primary_key_columns = [col.name for col in table.primary_key]
-            
-            if label.text() in primary_key_columns and table.columns[label.text()].autoincrement:
-                continue  # Skip autoincrement fields
-            
-            data[label.text()] = line_edit.text()
+            if isinstance(line_edit, QLineEdit):
+                data[label.text()] = line_edit.text()
+            else:
+                # Handle other widget types like QComboBox, etc.
+                pass
         
         return data
+
 
 from models import Street, TypeConstruction
 
