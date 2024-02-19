@@ -1,9 +1,10 @@
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, QPushButton, QLabel, QTableWidget, QTableWidgetItem
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, QPushButton, QLabel, QTableWidget, QTableWidgetItem, QMessageBox
 from PyQt6.QtCore import Qt
 from models import Street, TypeConstruction, BasicProject, Appointment, LoadBearingWalls, BuildingRoof, BuildingFloor, Facade, BuildingDescription, WearRate
 from database import engine, db_session
 from data_access_layer import DataAccessLayer
 from sqlalchemy import inspect
+from sqlalchemy.exc import IntegrityError
 class CrudWindow(QWidget):
     def __init__(self, model_class_name):
         super().__init__()
@@ -70,10 +71,16 @@ class CrudWindow(QWidget):
             headers = [str(col) for col in model_class.__table__.columns.keys()]
             self.table_widget.setHorizontalHeaderLabels(headers)
 
-    from data_access_layer import DataAccessLayer
 
+    def showErrorDialog(self, message):
+        # Code to create and display an error dialog with the given message
+        error_dialog = QMessageBox()
+        error_dialog.setText(message)
+        error_dialog.setIcon(QMessageBox.Icon.Critical)
+        error_dialog.setWindowTitle("Error")
+        error_dialog.exec()
 
-    from sqlalchemy import inspect
+# ...
 
     def createItem(self):
         model_class = get_model_class(self.model_class_name)
@@ -81,10 +88,30 @@ class CrudWindow(QWidget):
             # Use SQLAlchemy's inspect function to get the columns
             inspector = inspect(model_class)
             columns = [column.name for column in inspector.columns]
-            data = self.getFormData(columns=columns, model_class=model_class)
-            new_instance = model_class(**data)
-            dal = DataAccessLayer(db_session)
-            dal.create(new_instance)
+            try:
+                data = self.getFormData(columns=columns, model_class=model_class)
+                new_instance = model_class(**data)
+                dal = DataAccessLayer(db_session)
+                dal.create(new_instance)
+            except ValueError as e:
+                # When an exception occurs, open an error dialog showing the error message.
+                self.showErrorDialog(str(e))
+                db_session.rollback()
+            except IntegrityError as e:
+                # When an exception occurs, open an error dialog showing the error message.
+                self.showErrorDialog(str("Вы не можете добавить значение, которое уже есть в базе данных"))
+                db_session.rollback()
+            else:
+                # If no exceptions occurred, refresh the table and clear the line edits.
+                self.refreshTable()
+                self.clearLineEdits(columns)
+
+    def clearLineEdits(self, columns):
+        """Clears the content of all QLineEdit widgets in the form."""
+        for i in range(0, len(columns)):
+            line_edit = self.layout.itemAt((i * 2) + 1).widget()
+            if isinstance(line_edit, QLineEdit):
+                line_edit.clear()
 
     def getFormData(self, columns, model_class):
         data = {}
@@ -93,7 +120,11 @@ class CrudWindow(QWidget):
             line_edit = self.layout.itemAt((i * 2) + 1).widget()  # Assuming line_edit is the correct widget type
             
             if isinstance(line_edit, QLineEdit):
-                data[label.text()] = line_edit.text()
+                text_content = line_edit.text().strip()
+                if text_content:
+                    data[label.text()] = text_content
+                else:
+                    raise ValueError(f"Поле '{label.text()}' не может быть пустым.")
             else:
                 # Handle other widget types like QComboBox, etc.
                 pass
