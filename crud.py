@@ -1,10 +1,11 @@
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, QPushButton, QLabel, QTableWidget, QTableWidgetItem, QMessageBox
-from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, QPushButton, QLabel, QTableWidget, QTableWidgetItem, QMessageBox, QHeaderView
 from models import Street, TypeConstruction, BasicProject, Appointment, LoadBearingWalls, BuildingRoof, BuildingFloor, Facade, BuildingDescription, WearRate
 from database import engine, db_session
 from data_access_layer import DataAccessLayer
-from sqlalchemy import inspect
+from sqlalchemy import inspect, and_
 from sqlalchemy.exc import IntegrityError
+from PyQt6.QtGui import QIcon
+
 class CrudWindow(QWidget):
     def __init__(self, model_class_name):
         super().__init__()
@@ -12,6 +13,7 @@ class CrudWindow(QWidget):
         self.initUI()
 
     def initUI(self):
+        self.configureMainWindow()
         self.setWindowTitle(f"CRUD for {self.model_class_name}")
         self.layout = QVBoxLayout()
 
@@ -34,6 +36,7 @@ class CrudWindow(QWidget):
         
             # Create a QTableWidget to display the database table data
             self.table_widget = QTableWidget()
+            self.table_widget.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
             self.layout.addWidget(self.table_widget)
 
             # Add a Refresh button to reload the data
@@ -41,10 +44,42 @@ class CrudWindow(QWidget):
             refresh_button.clicked.connect(self.refreshTable)
             self.layout.addWidget(refresh_button)
 
+            # Add a Delete button with an icon
+            delete_button = QPushButton()
+            delete_button.setIcon(QIcon("icons/trashbin.png"))  # Assuming there is an icon file at the specified path
+            delete_button.clicked.connect(self.deleteSelectedItems)
+            self.layout.addWidget(delete_button)
+
             self.setLayout(self.layout)
             self.refreshTable()
 
-        self.setLayout(self.layout)
+    def configureMainWindow(self):
+        self.resize(640, 480)
+
+    def deleteSelectedItems(self):
+        dal = DataAccessLayer(db_session)
+        selected_rows = self.table_widget.selectionModel().selectedRows()
+        if not selected_rows:
+            QMessageBox.warning(self, "No selection", "Please select the rows you want to delete.")
+            return
+
+        model_class = get_model_class(self.model_class_name)
+        if model_class:
+            primary_key_columns = [col.name for col in model_class.__table__.primary_key]
+            with engine.connect() as connection:
+                for idx in sorted(selected_rows, reverse=True):
+                    row_data = [self.table_widget.item(idx.row(), col).text() for col in range(self.table_widget.columnCount())]
+                    identifier = {col: val for col, val in zip(primary_key_columns, row_data)}
+                    try:
+                        # Use the delete method from the data access layer
+                        dal.delete(model_class, **identifier)
+                        self.table_widget.removeRow(idx.row())
+                    except IntegrityError as e:
+                        QMessageBox.critical(self, "Error", f"An error occurred while deleting the record: {e}")
+
+            self.refreshTable()
+
+
 
     def refreshTable(self):
         model_class = get_model_class(self.model_class_name)
@@ -105,6 +140,8 @@ class CrudWindow(QWidget):
                 # If no exceptions occurred, refresh the table and clear the line edits.
                 self.refreshTable()
                 self.clearLineEdits(columns)
+
+
 
     def clearLineEdits(self, columns):
         """Clears the content of all QLineEdit widgets in the form."""
