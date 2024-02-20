@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, QPushButton, QLabel, QTableWidget, QTableWidgetItem, QMessageBox, QHeaderView
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QInputDialog, QLineEdit, QPushButton, QLabel, QTableWidget, QTableWidgetItem, QMessageBox, QHeaderView
 from models import Street, TypeConstruction, BasicProject, Appointment, LoadBearingWalls, BuildingRoof, BuildingFloor, Facade, BuildingDescription, WearRate
 from database import engine, db_session
 from data_access_layer import DataAccessLayer
@@ -51,9 +51,21 @@ class CrudWindow(QWidget):
             delete_button.clicked.connect(self.deleteSelectedItems)
             self.layout.addWidget(delete_button)
 
+            update_button = QPushButton("Update")
+            update_button.clicked.connect(lambda: self.handleUpdateButtonClick())
+            self.layout.addWidget(update_button)
+
+        
             self.setLayout(self.layout)
             self.refreshTable()
 
+    def handleUpdateButtonClick(self):
+            current_row = self.table_widget.currentRow()
+            id_item = self.table_widget.item(current_row, 0)  # Assuming the first column is the ID
+            if id_item is not None:
+                self.updateItem(id_item.text())
+            else:
+                QMessageBox.warning(self, "Update Error", "Please select a valid row before updating.")
     def configureMainWindow(self):
         self.resize(640, 480)
 
@@ -80,7 +92,27 @@ class CrudWindow(QWidget):
 
             self.refreshTable()
 
-
+    def addUpdateButton(self, row_idx):
+        
+        selected_row_index = self.table_widget.currentRow()
+        if selected_row_index != -1:
+            model_class = get_model_class(self.model_class_name)
+            if model_class:
+                primary_key_columns = [col.name for col in model_class.__table__.primary_key]
+                row_data = [self.table_widget.item(selected_row_index, col).text() for col in range(self.table_widget.columnCount())]
+                identifier = {col: val for col, val in zip(primary_key_columns, row_data)}
+                # Assuming there is a method to get a form or dialog to edit the selected item
+                edit_dialog = self.getEditDialog(model_class, identifier)
+                if edit_dialog.exec():
+                    dal = DataAccessLayer(db_session)
+                    updated_data = edit_dialog.getUpdatedData()
+                    dal.update(model_class, identifier, updated_data)
+                    self.refreshTable()
+            else:
+                QMessageBox.warning(self, "No selection", "Please select a row to edit.")
+                update_button = QPushButton("Update")
+                update_button.clicked.connect(lambda: self.updateItem(row_idx))
+                self.table_widget.setCellWidget(row_idx, self.table_widget.columnCount(), update_button)
 
     def refreshTable(self):
         model_class = get_model_class(self.model_class_name)
@@ -102,10 +134,60 @@ class CrudWindow(QWidget):
                 for col_idx, col in enumerate(row):
                     item = QTableWidgetItem(str(col))
                     self.table_widget.setItem(row_idx, col_idx, item)
+                self.addUpdateButton(row_idx)
 
             # Set table headers
             headers = [str(col) for col in model_class.__table__.columns.keys()]
             self.table_widget.setHorizontalHeaderLabels(headers)
+
+    def updateItem(self, id_value):
+    
+        model_class = get_model_class(self.model_class_name)
+        if model_class:
+            dal = DataAccessLayer(db_session)
+            
+            id_column_idx = 0  # Assuming the first column is the primary key column
+            street_name_column_idx = 1  # Assuming the second column is the street name column
+            
+            # Convert id_value to an integer
+            id_value = int(id_value)
+
+            # Search for the row index corresponding to the ID_street value
+            row_idx = -1
+            for row in range(self.table_widget.rowCount()):
+                item = self.table_widget.item(row, id_column_idx)
+                if item is not None and int(item.text()) == id_value:
+                    row_idx = row
+                    break
+
+            if row_idx != -1:
+                item_street_name = self.table_widget.item(row_idx, street_name_column_idx)
+
+                if item_street_name:
+                    street_name = item_street_name.text()
+
+                    new_value, ok = QInputDialog.getText(self, "Update Record", "Enter the new street name:")
+                    if ok:
+                        try:
+                            updated_obj = dal.update(model_class, identifier={"ID_street": id_value}, street_name=new_value)
+                            
+                            # Check if the update was successful before proceeding
+                            if updated_obj:
+                                item_street_name.setText(new_value)
+                            else:
+                                raise Exception("Failed to update the record")
+                            
+                        except Exception as e:
+                            self.showErrorDialog(f"An error occurred while updating the record: {e}")
+                else:
+                    self.showErrorDialog("Column not found for ID_street value.")
+            else:
+                self.showErrorDialog("Row not found for ID_street value.")
+
+
+
+
+
 
 
     def showErrorDialog(self, message):

@@ -26,12 +26,16 @@ class DataAccessLayer:
         try:
             obj = self.session.query(model).filter_by(**identifier).one()
             for key, value in kwargs.items():
-                setattr(obj, key, value)
+                if hasattr(obj, key):
+                    setattr(obj, key, value)
+                else:
+                    raise AttributeError(f"{model.__name__} does not have attribute {key}")
             self.session.commit()
             return obj
         except Exception as e:
             self.session.rollback()
             raise e
+
 
     def delete(self, model, **identifier):
         try:
