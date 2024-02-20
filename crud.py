@@ -5,6 +5,7 @@ from data_access_layer import DataAccessLayer
 from sqlalchemy import inspect, and_
 from sqlalchemy.exc import IntegrityError
 from PyQt6.QtGui import QIcon
+from get_model_class import get_model_class
 
 class CrudWindow(QWidget):
     def __init__(self, model_class_name):
@@ -169,20 +170,3 @@ class CrudWindow(QWidget):
         return data
 
 
-from models import Street, TypeConstruction
-
-def get_model_class(model_class_name):
-    model_mapping = {
-        'Street': Street,
-        'TypeConstruction': TypeConstruction,
-        'BasicProject': BasicProject,
-        'Appointment': Appointment,
-        'LoadBearingWalls': LoadBearingWalls,
-        'BuildingRoof': BuildingRoof,
-        'BuildingFloor': BuildingFloor,
-        'Facade': Facade,
-        'BuildingDescription': BuildingDescription,
-        'WearRate': WearRate
-        # Add more model mappings as needed
-    }
-    return model_mapping.get(model_class_name)
