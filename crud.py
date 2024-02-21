@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QInputDialog, QLineEdit, QPushButton, QLabel, QTableWidget, QTableWidgetItem, QMessageBox, QHeaderView
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QDialog, QHBoxLayout, QInputDialog, QLineEdit, QPushButton, QLabel, QTableWidget, QTableWidgetItem, QMessageBox, QHeaderView
 from models import Street, TypeConstruction, BasicProject, Appointment, LoadBearingWalls, BuildingRoof, BuildingFloor, Facade, BuildingDescription, WearRate
 from database import engine, db_session
 from data_access_layer import DataAccessLayer
@@ -141,48 +141,77 @@ class CrudWindow(QWidget):
             self.table_widget.setHorizontalHeaderLabels(headers)
 
     def updateItem(self, id_value):
-    
         model_class = get_model_class(self.model_class_name)
         if model_class:
             dal = DataAccessLayer(db_session)
             
-            id_column_idx = 0  # Assuming the first column is the primary key column
-            street_name_column_idx = 1  # Assuming the second column is the street name column
+            primary_key_column = None
+            editable_columns = []
+            column_names = [col.name for col in model_class.__table__.columns]
             
-            # Convert id_value to an integer
-            id_value = int(id_value)
+            # Find the primary key and editable columns by excluding autoincrement and primary key columns
+            for column in model_class.__table__.columns:
+                if not column.primary_key or not column.autoincrement:
+                    if column.name != "ID_" + model_class.__tablename__:
+                        editable_columns.append(column.name)
+                if column.primary_key:
+                    primary_key_column = column.name
+            
+            if primary_key_column and editable_columns:
+                # Convert id_value to an integer
+                id_value = int(id_value)
 
-            # Search for the row index corresponding to the ID_street value
-            row_idx = -1
-            for row in range(self.table_widget.rowCount()):
-                item = self.table_widget.item(row, id_column_idx)
-                if item is not None and int(item.text()) == id_value:
-                    row_idx = row
-                    break
+                # Search for the row index corresponding to the primary key value
+                row_idx = -1
+                for row in range(self.table_widget.rowCount()):
+                    item = self.table_widget.item(row, column_names.index(primary_key_column))
+                    if item is not None and int(item.text()) == id_value:
+                        row_idx = row
+                        break
 
-            if row_idx != -1:
-                item_street_name = self.table_widget.item(row_idx, street_name_column_idx)
-
-                if item_street_name:
-                    street_name = item_street_name.text()
-
-                    new_value, ok = QInputDialog.getText(self, "Update Record", "Enter the new street name:")
-                    if ok:
+                if row_idx != -1:
+                    item_values = [self.table_widget.item(row_idx, column_names.index(col)).text() for col in editable_columns]
+                    dialog = QDialog(self)
+                    dialog.setWindowTitle("Update Record")
+                    layout = QVBoxLayout()
+                    
+                    input_fields = {}
+                    for col, value in zip(editable_columns, item_values):
+                        label = QLabel(col.replace("_", " ").title(), dialog)
+                        input_field = QLineEdit(dialog)
+                        input_field.setText(value)
+                        layout.addWidget(label)
+                        layout.addWidget(input_field)
+                        input_fields[col] = input_field
+                    
+                    submit_button = QPushButton("Submit", dialog)
+                    layout.addWidget(submit_button)
+                    
+                    for field_name, field_value in input_fields.items():
+                        field_value.setPlaceholderText("Enter new value for " + field_name)
+                    
+                    def update_record():
+                        new_values = {field_name: field_value.text() for field_name, field_value in input_fields.items()}
                         try:
-                            updated_obj = dal.update(model_class, identifier={"ID_street": id_value}, street_name=new_value)
-                            
-                            # Check if the update was successful before proceeding
+                            updated_obj = dal.update(model_class, identifier={primary_key_column: id_value}, **new_values)
                             if updated_obj:
-                                item_street_name.setText(new_value)
+                                for col, value in zip(editable_columns, new_values.values()):
+                                    self.table_widget.item(row_idx, column_names.index(col)).setText(value)
+                                dialog.close()
                             else:
                                 raise Exception("Failed to update the record")
-                            
                         except Exception as e:
                             self.showErrorDialog(f"An error occurred while updating the record: {e}")
+                    
+                    submit_button.clicked.connect(update_record)
+
+                    dialog.setLayout(layout)
+                    dialog.exec()
                 else:
-                    self.showErrorDialog("Column not found for ID_street value.")
+                    self.showErrorDialog(f"Row not found for {primary_key_column} value.")
             else:
-                self.showErrorDialog("Row not found for ID_street value.")
+                self.showErrorDialog("Primary key column or editable columns not found in the model class.")
+
 
 
 
