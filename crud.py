@@ -2,7 +2,6 @@ from PyQt6.QtWidgets import QWidget, QVBoxLayout, QDialog, QHBoxLayout, QInputDi
 from models import Street, TypeConstruction, BasicProject, Appointment, LoadBearingWalls, BuildingRoof, BuildingFloor, Facade, BuildingDescription, WearRate
 from database import engine, db_session
 from data_access_layer import DataAccessLayer
-from sqlalchemy import inspect, and_
 from sqlalchemy.exc import IntegrityError
 from PyQt6.QtGui import QIcon
 from get_model_class import get_model_class
@@ -50,8 +49,8 @@ class CrudWindow(QWidget):
 
             # Add a Delete button with an icon
             delete_button = QPushButton()
-            delete_button.setIcon(QIcon("icons/trashbin.png"))  # Assuming there is an icon file at the specified path
-            delete_button.clicked.connect(self.deleteSelectedItems)
+            delete_button.setIcon(QIcon("icons/trashbin.png"))
+            delete_button.clicked.connect(lambda: CrudOperations().deleteSelectedItems(self, self.model_class_name, db_session, get_model_class))
             self.layout.addWidget(delete_button)
 
             update_button = QPushButton("Изменить")
@@ -72,28 +71,6 @@ class CrudWindow(QWidget):
     def configureMainWindow(self):
         self.resize(640, 480)
 
-    def deleteSelectedItems(self):
-        dal = DataAccessLayer(db_session)
-        selected_rows = self.table_widget.selectionModel().selectedRows()
-        if not selected_rows:
-            QMessageBox.warning(self, "No selection", "Please select the rows you want to delete.")
-            return
-
-        model_class = get_model_class(self.model_class_name)
-        if model_class:
-            primary_key_columns = [col.name for col in model_class.__table__.primary_key]
-            with engine.connect() as connection:
-                for idx in sorted(selected_rows, reverse=True):
-                    row_data = [self.table_widget.item(idx.row(), col).text() for col in range(self.table_widget.columnCount())]
-                    identifier = {col: val for col, val in zip(primary_key_columns, row_data)}
-                    try:
-                        # Use the delete method from the data access layer
-                        dal.delete(model_class, **identifier)
-                        self.table_widget.removeRow(idx.row())
-                    except IntegrityError as e:
-                        QMessageBox.critical(self, "Error", f"An error occurred while deleting the record: {e}")
-
-            self.refreshTable()
 
     def addUpdateButton(self, row_idx):
         
