@@ -6,6 +6,7 @@ from sqlalchemy import inspect, and_
 from sqlalchemy.exc import IntegrityError
 from PyQt6.QtGui import QIcon
 from get_model_class import get_model_class
+from crud_operations import CrudOperations
 
 class CrudWindow(QWidget):
     def __init__(self, model_class_name):
@@ -31,8 +32,10 @@ class CrudWindow(QWidget):
                 self.layout.addWidget(label)
                 self.layout.addWidget(line_edit)
 
-            save_button = QPushButton("Save")
-            save_button.clicked.connect(self.createItem)
+            save_button = QPushButton("Создать")
+            # Create an instance of CrudOperations
+            self.crud_operations = CrudOperations()
+            save_button.clicked.connect(lambda: self.crud_operations.createItem(self.model_class_name, db_session, get_model_class, self.getFormData, DataAccessLayer, self.refreshTable, self.clearLineEdits))
             self.layout.addWidget(save_button)
         
             # Create a QTableWidget to display the database table data
@@ -41,7 +44,7 @@ class CrudWindow(QWidget):
             self.layout.addWidget(self.table_widget)
 
             # Add a Refresh button to reload the data
-            refresh_button = QPushButton("Refresh")
+            refresh_button = QPushButton("Обновить")
             refresh_button.clicked.connect(self.refreshTable)
             self.layout.addWidget(refresh_button)
 
@@ -51,7 +54,7 @@ class CrudWindow(QWidget):
             delete_button.clicked.connect(self.deleteSelectedItems)
             self.layout.addWidget(delete_button)
 
-            update_button = QPushButton("Update")
+            update_button = QPushButton("Изменить")
             update_button.clicked.connect(lambda: self.handleUpdateButtonClick())
             self.layout.addWidget(update_button)
 
@@ -219,39 +222,8 @@ class CrudWindow(QWidget):
 
 
 
-    def showErrorDialog(self, message):
-        # Code to create and display an error dialog with the given message
-        error_dialog = QMessageBox()
-        error_dialog.setText(message)
-        error_dialog.setIcon(QMessageBox.Icon.Critical)
-        error_dialog.setWindowTitle("Error")
-        error_dialog.exec()
 
-# ...
 
-    def createItem(self):
-        model_class = get_model_class(self.model_class_name)
-        if model_class:
-            # Use SQLAlchemy's inspect function to get the columns
-            inspector = inspect(model_class)
-            columns = [column.name for column in inspector.columns]
-            try:
-                data = self.getFormData(columns=columns, model_class=model_class)
-                new_instance = model_class(**data)
-                dal = DataAccessLayer(db_session)
-                dal.create(new_instance)
-            except ValueError as e:
-                # When an exception occurs, open an error dialog showing the error message.
-                self.showErrorDialog(str(e))
-                db_session.rollback()
-            except IntegrityError as e:
-                # When an exception occurs, open an error dialog showing the error message.
-                self.showErrorDialog(str("Вы не можете добавить значение, которое уже есть в базе данных"))
-                db_session.rollback()
-            else:
-                # If no exceptions occurred, refresh the table and clear the line edits.
-                self.refreshTable()
-                self.clearLineEdits(columns)
 
 
 
