@@ -6,13 +6,13 @@ from database import engine, db_session
 from get_model_class import get_model_class
 class CrudOperations:
 
-    def createItem(self, model_class_name, db_session, getFormData, DataAccessLayer, refreshTable, clearLineEdits, table_widget, addUpdateButton):
+    def createItem(self, model_class_name, db_session, getFormData, DataAccessLayer, refreshTable, clearLineEdits, table_widget, addUpdateButton, layout):
         model_class = get_model_class(model_class_name)
         if model_class:
             inspector = inspect(model_class)
             columns = [column.name for column in inspector.columns]
             try:
-                data = getFormData(columns=columns, model_class=model_class)
+                data = self.getFormData(columns=columns, model_class=model_class, layout=layout)
                 new_instance = model_class(**data)
                 dal = DataAccessLayer(db_session)
                 dal.create(new_instance)
@@ -24,7 +24,7 @@ class CrudOperations:
                 db_session.rollback()
             else:
                 refreshTable(self, model_class_name, table_widget, addUpdateButton)
-                clearLineEdits(columns)
+                clearLineEdits(self, columns, layout)
     
     def refreshTable(self, model_class_name, table_widget, addUpdateButton):
         model_class = get_model_class(model_class_name)
@@ -82,6 +82,7 @@ class CrudOperations:
             updateItem(self, id_item.text(), model_class_name, table_widget)
         else:
             QMessageBox.warning(self, "Update Error", "Please select a valid row before updating.")
+
     def updateItem(self, id_value, model_class_name, table_widget):
         model_class = get_model_class(model_class_name)
         if model_class:
@@ -189,3 +190,31 @@ class CrudOperations:
         error_dialog.setIcon(QMessageBox.Icon.Critical)
         error_dialog.setWindowTitle("Error")
         error_dialog.exec()
+
+    def clearLineEdits(self, columns, layout):
+        """Clears the content of all QLineEdit widgets in the form."""
+        for i in range(0, len(columns)):
+            line_edit = layout.itemAt((i * 2) + 1).widget()
+            if isinstance(line_edit, QLineEdit):
+                line_edit.clear()
+
+    
+    
+    def getFormData(self, columns, model_class, layout):
+        data = {}
+        for i in range(0, len(columns)):
+            label = layout.itemAt(i * 2).widget()
+            line_edit = layout.itemAt((i * 2) + 1).widget()  # Assuming line_edit is the correct widget type
+            
+            if isinstance(line_edit, QLineEdit):
+                text_content = line_edit.text().strip()
+                if text_content:
+                    data[label.text()] = text_content
+                else:
+                    raise ValueError(f"Поле '{label.text()}' не может быть пустым.")
+            else:
+                # Handle other widget types like QComboBox, etc.
+                pass
+        
+        return data
+

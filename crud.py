@@ -34,7 +34,7 @@ class CrudWindow(QWidget):
             save_button = QPushButton("Создать")
             # Create an instance of CrudOperations
             self.crud_operations = CrudOperations()
-            save_button.clicked.connect(lambda: self.crud_operations.createItem(self.model_class_name, db_session, self.getFormData, DataAccessLayer, CrudOperations.refreshTable, self.clearLineEdits, self.table_widget, CrudOperations.addUpdateButton))
+            save_button.clicked.connect(lambda: self.crud_operations.createItem(self.model_class_name, db_session, CrudOperations.getFormData, DataAccessLayer, CrudOperations.refreshTable, CrudOperations.clearLineEdits, self.table_widget, CrudOperations.addUpdateButton, self.layout))
             self.layout.addWidget(save_button)
         
             # Create a QTableWidget to display the database table data
@@ -67,44 +67,6 @@ class CrudWindow(QWidget):
         self.resize(640, 480)
 
 
-    
-    
-    
 
-
-
-
-
-
-
-
-
-
-
-
-    def clearLineEdits(self, columns):
-        """Clears the content of all QLineEdit widgets in the form."""
-        for i in range(0, len(columns)):
-            line_edit = self.layout.itemAt((i * 2) + 1).widget()
-            if isinstance(line_edit, QLineEdit):
-                line_edit.clear()
-
-    def getFormData(self, columns, model_class):
-        data = {}
-        for i in range(0, len(columns)):
-            label = self.layout.itemAt(i * 2).widget()
-            line_edit = self.layout.itemAt((i * 2) + 1).widget()  # Assuming line_edit is the correct widget type
-            
-            if isinstance(line_edit, QLineEdit):
-                text_content = line_edit.text().strip()
-                if text_content:
-                    data[label.text()] = text_content
-                else:
-                    raise ValueError(f"Поле '{label.text()}' не может быть пустым.")
-            else:
-                # Handle other widget types like QComboBox, etc.
-                pass
-        
-        return data
 
 
