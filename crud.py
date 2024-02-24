@@ -34,7 +34,7 @@ class CrudWindow(QWidget):
             save_button = QPushButton("Создать")
             # Create an instance of CrudOperations
             self.crud_operations = CrudOperations()
-            save_button.clicked.connect(lambda: self.crud_operations.createItem(self.model_class_name, db_session, CrudOperations.getFormData, DataAccessLayer, CrudOperations.refreshTable, CrudOperations.clearLineEdits, self.table_widget, CrudOperations.addUpdateButton, self.layout))
+            save_button.clicked.connect(lambda: self.crud_operations.createItem(self.model_class_name, db_session, DataAccessLayer, CrudOperations.refreshTable, CrudOperations.clearLineEdits, self.table_widget, CrudOperations.addUpdateButton, self.layout))
             self.layout.addWidget(save_button)
         
             # Create a QTableWidget to display the database table data

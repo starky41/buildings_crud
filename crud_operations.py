@@ -6,7 +6,7 @@ from database import engine, db_session
 from get_model_class import get_model_class
 class CrudOperations:
 
-    def createItem(self, model_class_name, db_session, getFormData, DataAccessLayer, refreshTable, clearLineEdits, table_widget, addUpdateButton, layout):
+    def createItem(self, model_class_name, db_session, DataAccessLayer, refreshTable, clearLineEdits, table_widget, addUpdateButton, layout):
         model_class = get_model_class(model_class_name)
         if model_class:
             inspector = inspect(model_class)
