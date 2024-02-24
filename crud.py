@@ -34,7 +34,7 @@ class CrudWindow(QWidget):
             save_button = QPushButton("Создать")
             # Create an instance of CrudOperations
             self.crud_operations = CrudOperations()
-            save_button.clicked.connect(lambda: self.crud_operations.createItem(self.model_class_name, db_session, get_model_class, self.getFormData, DataAccessLayer, CrudOperations.refreshTable, self.clearLineEdits, self.table_widget, CrudOperations.addUpdateButton))
+            save_button.clicked.connect(lambda: self.crud_operations.createItem(self.model_class_name, db_session, self.getFormData, DataAccessLayer, CrudOperations.refreshTable, self.clearLineEdits, self.table_widget, CrudOperations.addUpdateButton))
             self.layout.addWidget(save_button)
         
             # Create a QTableWidget to display the database table data
@@ -44,23 +44,23 @@ class CrudWindow(QWidget):
 
             # Add a Refresh button to reload the data
             refresh_button = QPushButton("Обновить")
-            refresh_button.clicked.connect(lambda: CrudOperations.refreshTable(self, self.model_class_name, get_model_class, self.table_widget, CrudOperations.addUpdateButton))
+            refresh_button.clicked.connect(lambda: CrudOperations.refreshTable(self, self.model_class_name, self.table_widget, CrudOperations.addUpdateButton))
             self.layout.addWidget(refresh_button)
 
             # Add a Delete button with an icon
             delete_button = QPushButton()
             delete_button.setIcon(QIcon("icons/trashbin.png"))
-            delete_button.clicked.connect(lambda: CrudOperations.deleteSelectedItems(self, self.table_widget, self.model_class_name, db_session, get_model_class, CrudOperations.refreshTable))
+            delete_button.clicked.connect(lambda: CrudOperations.deleteSelectedItems(self, self.table_widget, self.model_class_name, db_session, CrudOperations.refreshTable))
             self.layout.addWidget(delete_button)
 
             update_button = QPushButton("Изменить")
             # update_button.clicked.connect(lambda: self.handleUpdateButtonClick())
-            update_button.clicked.connect(lambda: CrudOperations.handleUpdateButtonClick(self, CrudOperations.updateItem, self.model_class_name, get_model_class, self.table_widget))
+            update_button.clicked.connect(lambda: CrudOperations.handleUpdateButtonClick(self, CrudOperations.updateItem, self.model_class_name, self.table_widget))
             self.layout.addWidget(update_button)
 
         
             self.setLayout(self.layout)
-            self.crud_operations.refreshTable(self.model_class_name, get_model_class, self.table_widget, CrudOperations.addUpdateButton)
+            self.crud_operations.refreshTable(self.model_class_name, self.table_widget, CrudOperations.addUpdateButton)
 
 
     def configureMainWindow(self):

@@ -6,7 +6,7 @@ from database import engine, db_session
 from get_model_class import get_model_class
 class CrudOperations:
 
-    def createItem(self, model_class_name, db_session, get_model_class, getFormData, DataAccessLayer, refreshTable, clearLineEdits, table_widget, addUpdateButton):
+    def createItem(self, model_class_name, db_session, getFormData, DataAccessLayer, refreshTable, clearLineEdits, table_widget, addUpdateButton):
         model_class = get_model_class(model_class_name)
         if model_class:
             inspector = inspect(model_class)
@@ -23,10 +23,10 @@ class CrudOperations:
                 self.showErrorDialog("The value already exists in the database")
                 db_session.rollback()
             else:
-                refreshTable(self, model_class_name, get_model_class, table_widget, addUpdateButton)
+                refreshTable(self, model_class_name, table_widget, addUpdateButton)
                 clearLineEdits(columns)
     
-    def refreshTable(self, model_class_name, get_model_class, table_widget, addUpdateButton):
+    def refreshTable(self, model_class_name, table_widget, addUpdateButton):
         model_class = get_model_class(model_class_name)
         if model_class:
             # Clear existing data in the table widget
@@ -75,14 +75,14 @@ class CrudOperations:
                 table_widget.setCellWidget(row_idx, table_widget.columnCount(), update_button)
 
 
-    def handleUpdateButtonClick(self, updateItem, model_class_name, get_model_class, table_widget):
+    def handleUpdateButtonClick(self, updateItem, model_class_name, table_widget):
         current_row = self.table_widget.currentRow()
         id_item = self.table_widget.item(current_row, 0)  # Assuming the first column is the ID
         if id_item is not None:
-            updateItem(self, id_item.text(), model_class_name, get_model_class, table_widget)
+            updateItem(self, id_item.text(), model_class_name, table_widget)
         else:
             QMessageBox.warning(self, "Update Error", "Please select a valid row before updating.")
-    def updateItem(self, id_value, model_class_name, get_model_class, table_widget):
+    def updateItem(self, id_value, model_class_name, table_widget):
         model_class = get_model_class(model_class_name)
         if model_class:
             dal = DataAccessLayer(db_session)
@@ -156,7 +156,7 @@ class CrudOperations:
 
 
 
-    def deleteSelectedItems(self, table_widget, model_class_name, db_session, get_model_class, refreshTable, addUpdateButton=addUpdateButton):
+    def deleteSelectedItems(self, table_widget, model_class_name, db_session, refreshTable=refreshTable, addUpdateButton=addUpdateButton):
         dal = DataAccessLayer(db_session)
         selected_rows = table_widget.selectionModel().selectedRows()
         if not selected_rows:
@@ -178,7 +178,7 @@ class CrudOperations:
                     except IntegrityError as e:
                         QMessageBox.critical(table_widget, "Error", f"An error occurred while deleting the record: {e}")
 
-                refreshTable(self, model_class_name, get_model_class, table_widget, addUpdateButton)
+                refreshTable(self, model_class_name, table_widget, addUpdateButton)
 
 
 
