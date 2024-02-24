@@ -52,7 +52,7 @@ class CrudOperations:
             headers = [str(col) for col in model_class.__table__.columns.keys()]
             table_widget.setHorizontalHeaderLabels(headers)
 
-    def addUpdateButton(self, row_idx, table_widget, model_class_name, addUpdateButton, refreshTable=refreshTable):
+    def addUpdateButton(self, row_idx, table_widget, model_class_name, addUpdateButton):
         
         selected_row_index = table_widget.currentRow()
         if selected_row_index != -1:
@@ -67,7 +67,7 @@ class CrudOperations:
                     dal = DataAccessLayer(db_session)
                     updated_data = edit_dialog.getUpdatedData()
                     dal.update(model_class, identifier, updated_data)
-                    refreshTable(self, model_class_name, get_model_class, table_widget, addUpdateButton)
+                    self.refreshTable(self, model_class_name, get_model_class, table_widget, addUpdateButton)
             else:
                 QMessageBox.warning(self, "No selection", "Please select a row to edit.")
                 update_button = QPushButton("Update")
