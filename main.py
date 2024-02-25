@@ -1,6 +1,7 @@
 from database import init_db, db_session
 from data_access_layer import DataAccessLayer
-from gui import QApplication, MyApp
+from gui import MyApp
+from PyQt6.QtWidgets import QApplication
 # Initialize the database (create tables if they don't exist)
 init_db()
 
