@@ -1,5 +1,7 @@
-from PyQt6.QtWidgets import QWidget, QLineEdit, QLabel, QVBoxLayout, QHBoxLayout, QPushButton, QDialog
+from PyQt6.QtWidgets import QWidget, QLineEdit, QLabel, QVBoxLayout, QHBoxLayout, QPushButton, QCompleter
 from show_additional_fields import AdditionalFieldsDialog
+from models import Street
+from database import db_session
 
 class Tab1(QWidget):
     def __init__(self):
@@ -27,9 +29,17 @@ class Tab1(QWidget):
         fieldLayout = QHBoxLayout()
         fieldLabel = QLabel(label)
         fieldLineEdit = QLineEdit()
+
+        if label == "Улица":
+            streets = db_session.query(Street).all()  # Assuming `session` is your SQLAlchemy session
+            street_names = [street.street_name for street in streets]
+            completer = QCompleter(street_names)
+            fieldLineEdit.setCompleter(completer)
+
         fieldLayout.addWidget(fieldLabel)
         fieldLayout.addWidget(fieldLineEdit)
         layout.addLayout(fieldLayout)
+
 
     def addSection1Buttons(self, layout):
         section1ButtonsLayout = QHBoxLayout()
