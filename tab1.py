@@ -1,27 +1,27 @@
-from PyQt6.QtWidgets import QWidget, QLabel, QVBoxLayout, QHBoxLayout, QPushButton, QLineEdit, QGridLayout
-from show_additional_fields import show_additional_fields
+from PyQt6.QtWidgets import QWidget, QLineEdit, QLabel, QVBoxLayout, QHBoxLayout, QPushButton, QDialog
+from show_additional_fields import AdditionalFieldsDialog
+
 class Tab1(QWidget):
     def __init__(self):
         super().__init__()
         self.addButtonClicked = False
-        self.section2_widgets = []
         self.initUI()
 
     def initUI(self):
-        tab1Layout = QHBoxLayout()
+        tab1Layout = QVBoxLayout()
         self.setLayout(tab1Layout)
         self.setupTab1SearchSection(tab1Layout)
         self.setupTab1SecondSection(tab1Layout)
 
     def setupTab1SearchSection(self, layout):
-        from PyQt6.QtCore import Qt
-        section1 = QVBoxLayout()
-        section1.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
-        section1.addWidget(QLabel("Поиск"))
-        self.addSearchField("Улица", section1)
-        self.addSearchField("Номер", section1)
-        self.addSection1Buttons(section1)
-        layout.addLayout(section1)
+        from PyQt6.QtCore import Qt  # Add this import
+        self.section1 = QVBoxLayout()
+        self.section1.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+        self.section1.addWidget(QLabel("Поиск"))
+        self.addSearchField("Улица", self.section1)
+        self.addSearchField("Номер", self.section1)
+        self.addSection1Buttons(self.section1)
+        layout.addLayout(self.section1)
 
     def addSearchField(self, label, layout):
         fieldLayout = QHBoxLayout()
@@ -43,35 +43,41 @@ class Tab1(QWidget):
         layout.addLayout(section1ButtonsLayout)
 
     def setupTab1SecondSection(self, layout):
-        self.section2 = QVBoxLayout()
-        section2ButtonsLayout = QHBoxLayout()
-        section2ButtonsLayout.addWidget(QPushButton("Редактировать"))
-        section2ButtonsLayout.addWidget(QPushButton("Сохранить"))
-        self.section2.addLayout(section2ButtonsLayout)
+        self.section2Layout = QVBoxLayout()
+        self.editButton = QPushButton("Редактировать")
+        self.saveButton = QPushButton("Сохранить")
+        self.editButton.setVisible(False)
+        self.saveButton.setVisible(False)
+        self.section2ButtonsLayout = QHBoxLayout()  # Moved layout creation here
+        self.section2ButtonsLayout.addWidget(self.editButton)
+        self.section2ButtonsLayout.addWidget(self.saveButton)
         self.section2Wrapper = QWidget()
-        self.section2Wrapper.setLayout(self.section2)
+        self.section2Wrapper.setLayout(self.section2Layout)
         layout.addWidget(self.section2Wrapper)
         self.section2Wrapper.setVisible(False)
 
     def addFunction(self):
-        if not self.addButtonClicked:
-            self.addButtonClicked = True
-            show_additional_fields(self, True)
-            print("Add button clicked and action executed once")
-        else:
-            self.addButtonClicked = False
-            show_additional_fields(self, False)
-
+        self.additionalFieldsDialog = AdditionalFieldsDialog()
+        self.additionalFieldsDialog.exec()
     def showFindResults(self):
         try:
-            for widget in self.section2_widgets:
-                self.section2.removeWidget(widget)
+            # Clear existing widgets in section 2
+            for widget in getattr(self, 'section2_widgets', []):
+                self.section2Layout.removeWidget(widget)
                 widget.deleteLater()
-            self.section2_widgets = [QLabel("Results of the search will be displayed here.")]
 
-            for widget in self.section2_widgets:
-                self.section2.addWidget(widget)
+            # Add the "Results of the search" label
+            if not hasattr(self, 'results_label'):
+                self.results_label = QLabel("Results of the search will be displayed here.")
+            self.section2Layout.addWidget(self.results_label)
+
+            # Add the edit and save buttons if not already added
+            if self.section2ButtonsLayout not in self.section2Layout.children():
+                self.section2Layout.addLayout(self.section2ButtonsLayout)
+
+            # Show the edit and save buttons
+            self.editButton.setVisible(True)
+            self.saveButton.setVisible(True)
         except RuntimeError:
             pass
         self.section2Wrapper.setVisible(True)
-
