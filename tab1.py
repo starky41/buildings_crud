@@ -2,7 +2,6 @@ from PyQt6.QtWidgets import QWidget, QLineEdit, QLabel, QVBoxLayout, QHBoxLayout
 from show_additional_fields import AdditionalFieldsDialog
 from models import Street
 from database import db_session
-
 class Tab1(QWidget):
     def __init__(self):
         super().__init__()
@@ -40,7 +39,6 @@ class Tab1(QWidget):
         fieldLayout.addWidget(fieldLineEdit)
         layout.addLayout(fieldLayout)
 
-
     def addSection1Buttons(self, layout):
         section1ButtonsLayout = QHBoxLayout()
         findButton = QPushButton("Найти")
@@ -66,9 +64,13 @@ class Tab1(QWidget):
         layout.addWidget(self.section2Wrapper)
         self.section2Wrapper.setVisible(False)
 
+        # Add the edit and save buttons to section2Layout
+        self.section2Layout.addLayout(self.section2ButtonsLayout)
+
     def addFunction(self):
         self.additionalFieldsDialog = AdditionalFieldsDialog()
         self.additionalFieldsDialog.exec()
+
     def showFindResults(self):
         try:
             # Clear existing widgets in section 2
@@ -81,13 +83,17 @@ class Tab1(QWidget):
                 self.results_label = QLabel("Results of the search will be displayed here.")
             self.section2Layout.addWidget(self.results_label)
 
-            # Add the edit and save buttons if not already added
-            if self.section2ButtonsLayout not in self.section2Layout.children():
-                self.section2Layout.addLayout(self.section2ButtonsLayout)
-
             # Show the edit and save buttons
             self.editButton.setVisible(True)
             self.saveButton.setVisible(True)
+
+            # Create a new layout for the edit and save buttons
+            buttons_layout = QHBoxLayout()
+            buttons_layout.addWidget(self.editButton)
+            buttons_layout.addWidget(self.saveButton)
+
+            # Add the buttons layout after the results label
+            self.section2Layout.addLayout(buttons_layout)
         except RuntimeError:
             pass
         self.section2Wrapper.setVisible(True)
