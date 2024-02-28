@@ -1,82 +1,9 @@
-from PyQt6.QtWidgets import QWidget, QLineEdit, QLabel, QVBoxLayout, QHBoxLayout, QPushButton, QCompleter, QMessageBox
+from PyQt6.QtWidgets import QWidget, QLineEdit, QLabel, QVBoxLayout, QHBoxLayout, QPushButton, QCompleter, QMessageBox, QDialog
 from show_additional_fields import AdditionalFieldsDialog
 from models import Street
 from database import db_session
+
 class Tab1(QWidget):
-    def __init__(self):
-        super().__init__()
-        self.addButtonClicked = False
-        self.initUI()
-
-    def initUI(self):
-        tab1Layout = QVBoxLayout()
-        self.setLayout(tab1Layout)
-        self.setupTab1SearchSection(tab1Layout)
-
-    def setupTab1SearchSection(self, layout):
-        from PyQt6.QtCore import Qt  # Add this import
-        self.section1 = QVBoxLayout()
-        self.section1.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
-        self.section1.addWidget(QLabel("Поиск"))
-        self.addSearchField("Улица", self.section1)
-        self.addSearchField("Номер", self.section1)
-        self.addSection1Buttons(self.section1)
-        layout.addLayout(self.section1)
-
-    def addSearchField(self, label, layout):
-        fieldLayout = QHBoxLayout()
-        fieldLabel = QLabel(label)
-        fieldLineEdit = QLineEdit()
-
-        if label == "Улица":
-            streets = db_session.query(Street).all()  # Assuming `session` is your SQLAlchemy session
-            street_names = [street.street_name for street in streets]
-            completer = QCompleter(street_names)
-            fieldLineEdit.setCompleter(completer)
-
-            # Connect the editingFinished signal to the validateStreet function
-            fieldLineEdit.editingFinished.connect(lambda: self.validateStreet(fieldLineEdit, street_names))
-
-        fieldLayout.addWidget(fieldLabel)
-        fieldLayout.addWidget(fieldLineEdit)
-        layout.addLayout(fieldLayout)
-
-    def validateStreet(self, lineEdit, street_names):
-        street_entered = lineEdit.text().strip()
-        if not street_entered:
-            QMessageBox.critical(self, "Error", "Please enter a street name!")
-            lineEdit.clear()
-            return
-        
-        if street_entered not in street_names:
-            QMessageBox.critical(self, "Error", "Entered street does not exist!")
-            lineEdit.clear()
-
-    def addSection1Buttons(self, layout):
-        section1ButtonsLayout = QHBoxLayout()
-        findButton = QPushButton("Найти")
-        findButton.clicked.connect(self.showFindResults)
-        addButton = QPushButton("Добавить")
-        addButton.clicked.connect(self.addFunction)
-        section1ButtonsLayout.addWidget(findButton)
-        section1ButtonsLayout.addWidget(addButton)
-        layout.addLayout(section1ButtonsLayout)
-
-    def addFunction(self):
-        self.additionalFieldsDialog = AdditionalFieldsDialog()
-        self.additionalFieldsDialog.exec()
-
-    def showFindResults(self):
-        try:
-            # Create a string containing the results (for demonstration purposes)
-            results = "Sample results text..."
-            
-            # Open the results window
-            self.results_window = ResultsWindow(results)
-            self.results_window.exec()
-        except RuntimeError:
-            pass
-
     def __init__(self):
         super().__init__()
         self.addButtonClicked = False
@@ -90,6 +17,7 @@ class Tab1(QWidget):
 
     def setupTab1SearchSection(self, layout):
         from PyQt6.QtCore import Qt  # Add this import
+
         self.section1 = QVBoxLayout()
         self.section1.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
         self.section1.addWidget(QLabel("Поиск"))
@@ -104,17 +32,18 @@ class Tab1(QWidget):
         fieldLineEdit = QLineEdit()
 
         if label == "Улица":
-            streets = db_session.query(Street).all()  # Assuming `session` is your SQLAlchemy session
-            street_names = [street.street_name for street in streets]
-            completer = QCompleter(street_names)
-            fieldLineEdit.setCompleter(completer)
-
-            # Connect the editingFinished signal to the validateStreet function
-            fieldLineEdit.editingFinished.connect(lambda: self.validateStreet(fieldLineEdit, street_names))
+            self.setupStreetCompleter(fieldLineEdit)
 
         fieldLayout.addWidget(fieldLabel)
         fieldLayout.addWidget(fieldLineEdit)
         layout.addLayout(fieldLayout)
+
+    def setupStreetCompleter(self, lineEdit):
+        streets = db_session.query(Street).all()
+        street_names = [street.street_name for street in streets]
+        completer = QCompleter(street_names)
+        lineEdit.setCompleter(completer)
+        lineEdit.editingFinished.connect(lambda: self.validateStreet(lineEdit, street_names))
 
     def validateStreet(self, lineEdit, street_names):
         street_entered = lineEdit.text().strip()
@@ -122,7 +51,7 @@ class Tab1(QWidget):
             QMessageBox.critical(self, "Error", "Please enter a street name!")
             lineEdit.clear()
             return
-        
+
         if street_entered not in street_names:
             QMessageBox.critical(self, "Error", "Entered street does not exist!")
             lineEdit.clear()
@@ -143,15 +72,13 @@ class Tab1(QWidget):
         self.saveButton = QPushButton("Сохранить")
         self.editButton.setVisible(False)
         self.saveButton.setVisible(False)
-        self.section2ButtonsLayout = QHBoxLayout()  # Moved layout creation here
+        self.section2ButtonsLayout = QHBoxLayout()
         self.section2ButtonsLayout.addWidget(self.editButton)
         self.section2ButtonsLayout.addWidget(self.saveButton)
         self.section2Wrapper = QWidget()
         self.section2Wrapper.setLayout(self.section2Layout)
         layout.addWidget(self.section2Wrapper)
         self.section2Wrapper.setVisible(False)
-
-        # Add the edit and save buttons to section2Layout
         self.section2Layout.addLayout(self.section2ButtonsLayout)
 
     def addFunction(self):
@@ -160,20 +87,13 @@ class Tab1(QWidget):
 
     def showFindResults(self):
         try:
-            # Create a string containing the results (for demonstration purposes)
             results = "Sample results text..."
-            
-            # Open the results window
             self.results_window = ResultsWindow(results)
             self.results_window.exec()
-            
-            # Hide the edit and save buttons in the main window (if needed)
             self.editButton.setVisible(False)
             self.saveButton.setVisible(False)
         except RuntimeError:
             pass
-
-from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLabel, QPushButton
 
 class ResultsWindow(QDialog):
     def __init__(self, results):
@@ -181,11 +101,8 @@ class ResultsWindow(QDialog):
         self.setWindowTitle("Результаты поиска")
         layout = QVBoxLayout()
         self.setLayout(layout)
-        
         self.results_label = QLabel(results)
         layout.addWidget(self.results_label)
-        
-        # Add the edit, save, and delete buttons
         self.editButton = QPushButton("Редактировать")
         self.saveButton = QPushButton("Сохранить")
         self.deleteButton = QPushButton("Удалить")
