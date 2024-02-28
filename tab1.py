@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import QWidget, QLineEdit, QLabel, QVBoxLayout, QHBoxLayout, QPushButton, QCompleter, QMessageBox, QDialog
-from show_bd_fields import BuildingDescriptionDialog
+from building_description_dialog import BuildingDescriptionDialog
 from models import Street
 from database import db_session
 
