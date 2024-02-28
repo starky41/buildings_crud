@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QWidget, QLineEdit, QLabel, QVBoxLayout, QHBoxLayout, QPushButton, QCompleter
+from PyQt6.QtWidgets import QWidget, QLineEdit, QLabel, QVBoxLayout, QHBoxLayout, QPushButton, QCompleter, QMessageBox
 from show_additional_fields import AdditionalFieldsDialog
 from models import Street
 from database import db_session
@@ -35,9 +35,23 @@ class Tab1(QWidget):
             completer = QCompleter(street_names)
             fieldLineEdit.setCompleter(completer)
 
+            # Connect the editingFinished signal to the validateStreet function
+            fieldLineEdit.editingFinished.connect(lambda: self.validateStreet(fieldLineEdit, street_names))
+
         fieldLayout.addWidget(fieldLabel)
         fieldLayout.addWidget(fieldLineEdit)
         layout.addLayout(fieldLayout)
+
+    def validateStreet(self, lineEdit, street_names):
+        street_entered = lineEdit.text().strip()
+        if not street_entered:
+            QMessageBox.critical(self, "Error", "Please enter a street name!")
+            lineEdit.clear()
+            return
+        
+        if street_entered not in street_names:
+            QMessageBox.critical(self, "Error", "Entered street does not exist!")
+            lineEdit.clear()
 
     def addSection1Buttons(self, layout):
         section1ButtonsLayout = QHBoxLayout()
