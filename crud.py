@@ -33,9 +33,11 @@ class CrudWindow(QWidget):
                     continue  # Skip creating LineEdits for autoincrement fields
                 label = QLabel(column.name)
                 line_edit = QLineEdit()
-                grid_layout.addWidget(label, row, column_index % 2 * 2)  # Adjust column index based on even or odd
-                grid_layout.addWidget(line_edit, row, column_index % 2 * 2 + 1)  # Adjust column index based on even or odd
-                if column_index % 2 == 1:
+                # Adjust the row based on the presence of primary keys
+                row_offset = sum(1 for col in primary_key_columns if col != column.name)
+                grid_layout.addWidget(label, row + row_offset, column_index % 2 * 2)  
+                grid_layout.addWidget(line_edit, row + row_offset, column_index % 2 * 2 + 1) 
+                if (column_index + len(primary_key_columns)) % 2 == 1:
                     row += 1  # Move to the next row after two columns
 
             # Add the QGridLayout to a scroll area for editing fields
