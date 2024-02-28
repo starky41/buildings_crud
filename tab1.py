@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import QWidget, QLineEdit, QLabel, QVBoxLayout, QHBoxLayout, QPushButton, QCompleter, QMessageBox, QDialog
-from show_additional_fields import AdditionalFieldsDialog
+from show_bd_fields import BuildingDescriptionDialog
 from models import Street
 from database import db_session
 
@@ -82,7 +82,7 @@ class Tab1(QWidget):
         self.section2Layout.addLayout(self.section2ButtonsLayout)
 
     def addFunction(self):
-        self.additionalFieldsDialog = AdditionalFieldsDialog()
+        self.additionalFieldsDialog = BuildingDescriptionDialog()
         self.additionalFieldsDialog.exec()
 
     def showFindResults(self):
