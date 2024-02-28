@@ -12,6 +12,80 @@ class Tab1(QWidget):
         tab1Layout = QVBoxLayout()
         self.setLayout(tab1Layout)
         self.setupTab1SearchSection(tab1Layout)
+
+    def setupTab1SearchSection(self, layout):
+        from PyQt6.QtCore import Qt  # Add this import
+        self.section1 = QVBoxLayout()
+        self.section1.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+        self.section1.addWidget(QLabel("Поиск"))
+        self.addSearchField("Улица", self.section1)
+        self.addSearchField("Номер", self.section1)
+        self.addSection1Buttons(self.section1)
+        layout.addLayout(self.section1)
+
+    def addSearchField(self, label, layout):
+        fieldLayout = QHBoxLayout()
+        fieldLabel = QLabel(label)
+        fieldLineEdit = QLineEdit()
+
+        if label == "Улица":
+            streets = db_session.query(Street).all()  # Assuming `session` is your SQLAlchemy session
+            street_names = [street.street_name for street in streets]
+            completer = QCompleter(street_names)
+            fieldLineEdit.setCompleter(completer)
+
+            # Connect the editingFinished signal to the validateStreet function
+            fieldLineEdit.editingFinished.connect(lambda: self.validateStreet(fieldLineEdit, street_names))
+
+        fieldLayout.addWidget(fieldLabel)
+        fieldLayout.addWidget(fieldLineEdit)
+        layout.addLayout(fieldLayout)
+
+    def validateStreet(self, lineEdit, street_names):
+        street_entered = lineEdit.text().strip()
+        if not street_entered:
+            QMessageBox.critical(self, "Error", "Please enter a street name!")
+            lineEdit.clear()
+            return
+        
+        if street_entered not in street_names:
+            QMessageBox.critical(self, "Error", "Entered street does not exist!")
+            lineEdit.clear()
+
+    def addSection1Buttons(self, layout):
+        section1ButtonsLayout = QHBoxLayout()
+        findButton = QPushButton("Найти")
+        findButton.clicked.connect(self.showFindResults)
+        addButton = QPushButton("Добавить")
+        addButton.clicked.connect(self.addFunction)
+        section1ButtonsLayout.addWidget(findButton)
+        section1ButtonsLayout.addWidget(addButton)
+        layout.addLayout(section1ButtonsLayout)
+
+    def addFunction(self):
+        self.additionalFieldsDialog = AdditionalFieldsDialog()
+        self.additionalFieldsDialog.exec()
+
+    def showFindResults(self):
+        try:
+            # Create a string containing the results (for demonstration purposes)
+            results = "Sample results text..."
+            
+            # Open the results window
+            self.results_window = ResultsWindow(results)
+            self.results_window.exec()
+        except RuntimeError:
+            pass
+
+    def __init__(self):
+        super().__init__()
+        self.addButtonClicked = False
+        self.initUI()
+
+    def initUI(self):
+        tab1Layout = QVBoxLayout()
+        self.setLayout(tab1Layout)
+        self.setupTab1SearchSection(tab1Layout)
         self.setupTab1SecondSection(tab1Layout)
 
     def setupTab1SearchSection(self, layout):
@@ -61,7 +135,6 @@ class Tab1(QWidget):
         addButton.clicked.connect(self.addFunction)
         section1ButtonsLayout.addWidget(findButton)
         section1ButtonsLayout.addWidget(addButton)
-        section1ButtonsLayout.addWidget(QPushButton("Удалить"))
         layout.addLayout(section1ButtonsLayout)
 
     def setupTab1SecondSection(self, layout):
@@ -87,27 +160,35 @@ class Tab1(QWidget):
 
     def showFindResults(self):
         try:
-            # Clear existing widgets in section 2
-            for widget in getattr(self, 'section2_widgets', []):
-                self.section2Layout.removeWidget(widget)
-                widget.deleteLater()
-
-            # Add the "Results of the search" label
-            if not hasattr(self, 'results_label'):
-                self.results_label = QLabel("Results of the search will be displayed here.")
-            self.section2Layout.addWidget(self.results_label)
-
-            # Show the edit and save buttons
-            self.editButton.setVisible(True)
-            self.saveButton.setVisible(True)
-
-            # Create a new layout for the edit and save buttons
-            buttons_layout = QHBoxLayout()
-            buttons_layout.addWidget(self.editButton)
-            buttons_layout.addWidget(self.saveButton)
-
-            # Add the buttons layout after the results label
-            self.section2Layout.addLayout(buttons_layout)
+            # Create a string containing the results (for demonstration purposes)
+            results = "Sample results text..."
+            
+            # Open the results window
+            self.results_window = ResultsWindow(results)
+            self.results_window.exec()
+            
+            # Hide the edit and save buttons in the main window (if needed)
+            self.editButton.setVisible(False)
+            self.saveButton.setVisible(False)
         except RuntimeError:
             pass
-        self.section2Wrapper.setVisible(True)
+
+from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLabel, QPushButton
+
+class ResultsWindow(QDialog):
+    def __init__(self, results):
+        super().__init__()
+        self.setWindowTitle("Результаты поиска")
+        layout = QVBoxLayout()
+        self.setLayout(layout)
+        
+        self.results_label = QLabel(results)
+        layout.addWidget(self.results_label)
+        
+        # Add the edit, save, and delete buttons
+        self.editButton = QPushButton("Редактировать")
+        self.saveButton = QPushButton("Сохранить")
+        self.deleteButton = QPushButton("Удалить")
+        layout.addWidget(self.editButton)
+        layout.addWidget(self.saveButton)
+        layout.addWidget(self.deleteButton)

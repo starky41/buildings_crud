@@ -1,6 +1,6 @@
 from sqlalchemy import inspect
 from sqlalchemy.exc import IntegrityError
-from PyQt6.QtWidgets import QMessageBox, QTableWidgetItem, QPushButton, QDialog, QLabel, QVBoxLayout, QLineEdit
+from PyQt6.QtWidgets import QMessageBox, QTableWidgetItem, QPushButton, QDialog, QLabel, QLineEdit, QVBoxLayout, QHBoxLayout, QFormLayout, QGridLayout
 from data_access_layer import DataAccessLayer
 from database import engine, db_session
 from get_model_class import get_model_class
@@ -83,6 +83,8 @@ class CrudOperations:
         else:
             QMessageBox.warning(self, "Update Error", "Please select a valid row before updating.")
 
+
+
     def updateItem(self, id_value, model_class_name, table_widget):
         model_class = get_model_class(model_class_name)
         if model_class:
@@ -116,29 +118,39 @@ class CrudOperations:
                     item_values = [table_widget.item(row_idx, column_names.index(col)).text() for col in editable_columns]
                     dialog = QDialog(self)
                     dialog.setWindowTitle("Update Record")
-                    layout = QVBoxLayout()
-                    
-                    input_fields = {}
-                    for col, value in zip(editable_columns, item_values):
-                        label = QLabel(col.replace("_", " ").title(), dialog)
-                        input_field = QLineEdit(dialog)
-                        input_field.setText(value)
-                        layout.addWidget(label)
-                        layout.addWidget(input_field)
-                        input_fields[col] = input_field
-                    
+
+                    # Increase the size of the dialog window
+                    dialog.setGeometry(100, 100, 1024, 768)  # Adjust width and height as needed
+
+                    layout = QGridLayout()  # Grid layout for two columns
+
+                    # Add labels and line edits to the layout
+                    for col, (col_name, value) in enumerate(zip(editable_columns, item_values)):
+                        label = QLabel(col_name.replace("_", " ").title(), dialog)
+                        line_edit = QLineEdit(dialog)
+                        line_edit.setText(value)
+
+                        # Calculate the row and column index for label and line edit
+                        row = col // 2
+                        col_offset = col % 2
+
+                        # Add label and line edit to the grid layout
+                        layout.addWidget(label, row, col_offset * 2)
+                        layout.addWidget(line_edit, row, col_offset * 2 + 1)
+
                     submit_button = QPushButton("Submit", dialog)
-                    layout.addWidget(submit_button)
-                    
-                    for field_name, field_value in input_fields.items():
-                        field_value.setPlaceholderText("Enter new value for " + field_name)
+                    layout.addWidget(submit_button, len(editable_columns) // 2 + 1, 0, 1, 2)  # Span button across both columns
                     
                     def update_record():
-                        new_values = {field_name: field_value.text() for field_name, field_value in input_fields.items()}
+                        new_values = {}
+                        for col, (col_name, value) in enumerate(zip(editable_columns, item_values)):
+                            line_edit = layout.itemAtPosition(col // 2, (col % 2) * 2 + 1).widget()
+                            new_values[col_name] = line_edit.text()
+
                         try:
                             updated_obj = dal.update(model_class, identifier={primary_key_column: id_value}, **new_values)
                             if updated_obj:
-                                for col, value in zip(editable_columns, new_values.values()):
+                                for col, value in new_values.items():
                                     table_widget.item(row_idx, column_names.index(col)).setText(value)
                                 dialog.close()
                             else:
@@ -154,6 +166,7 @@ class CrudOperations:
                     self.showErrorDialog(f"Row not found for {primary_key_column} value.")
             else:
                 self.showErrorDialog("Primary key column or editable columns not found in the model class.")
+
 
 
 
