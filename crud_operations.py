@@ -34,8 +34,13 @@ class CrudOperations:
             table_widget.clear()
 
             # Fetch data from the database table
-            if model_class_name == 'Street':
-                # Fetch only from Street table
+            if model_class_name == 'BuildingDescription':
+                # Fetch data for BuildingDescription without any additional processing
+                with engine.connect() as connection:
+                    result = connection.execute(model_class.__table__.select())
+                    rows = result.fetchall()
+            elif model_class_name == 'Street':
+                # Fetch data for Street with both street_name and ID_street
                 with engine.connect() as connection:
                     result = connection.execute(model_class.__table__.select())
                     rows = result.fetchall()
@@ -57,12 +62,25 @@ class CrudOperations:
 
                 # Populate the table with the fetched data
                 for row_idx, row in enumerate(rows):
-                    for col_idx, col in enumerate(row):
-                        item = QTableWidgetItem(str(col) if col is not None else '')
-                        table_widget.setItem(row_idx, col_idx, item)
+                    # For BuildingDescription, populate the table without modification
+                    if model_class_name == 'BuildingDescription':
+                        for col_idx, col in enumerate(row):
+                            item = QTableWidgetItem(str(col) if col is not None else '')
+                            table_widget.setItem(row_idx, col_idx, item)
+                    elif model_class_name == 'Street':
+                        # For Street table, populate with street_name and ID_street
+                        for col_idx, col in enumerate(row):
+                            item = QTableWidgetItem(str(col) if col is not None else '')
+                            table_widget.setItem(row_idx, col_idx, item)
+                    else:
+                        # For other tables, directly populate the table with row data
+                        for col_idx, col in enumerate(row):
+                            item = QTableWidgetItem(str(col) if col is not None else '')
+                            table_widget.setItem(row_idx, col_idx, item)
 
                     # Add update button if required
                     addUpdateButton(self, row_idx, table_widget, model_class_name, addUpdateButton)
+
 
 
 
