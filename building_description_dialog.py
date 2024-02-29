@@ -178,29 +178,25 @@ class BuildingDescriptionDialog(QDialog):
         for row_index, row_data in enumerate(data):
             table_widget.insertRow(row_index)
             for col_index, header in enumerate(table_headers):
+                cell_value = ""
                 if hasattr(row_data, header):
+                    # Check if the attribute exists directly in BuildingDescription
                     cell_value = getattr(row_data, header)
-                    if cell_value is not None:
-                        cell_value = str(cell_value)
-                    else:
-                        cell_value = ""
+                elif hasattr(row_data, header + "_name"):
+                    # Check if the attribute exists with "_name" suffix (indicating the name of the related object)
+                    cell_value = getattr(row_data, header + "_name")
                 else:
-                    # Handle the case where the attribute does not exist (not a direct column of BuildingDescription)
-                    # Assume it's a foreign key and retrieve the related name
-                    if header.endswith("_name"):
-                        related_model_name = header.replace("_name", "")
-                        related_instance = getattr(row_data, related_model_name, None)
-                        if related_instance:
-                            # Check if the attribute exists in the related model
-                            cell_value = getattr(related_instance, related_model_name, "")
-                        else:
-                            cell_value = ""
-                table_widget.setItem(row_index, col_index, QTableWidgetItem(cell_value))
-
+                    # Handle the case where the attribute does not exist directly or as a related object's name
+                    # Assume it's a foreign key and retrieve the related object's name
+                    related_model_name = header.replace("_name", "")
+                    related_instance = getattr(row_data, related_model_name, None)
+                    if related_instance:
+                        # Check if the attribute exists in the related model
+                        cell_value = getattr(related_instance, related_model_name + "_name", "")
+                table_widget.setItem(row_index, col_index, QTableWidgetItem(str(cell_value)))
 
         # Add the table widget to the dialog layout
         table_layout.addWidget(table_widget)
 
         # Show the dialog
         table_dialog.exec()
-            
