@@ -10,7 +10,7 @@ from database import db_session
 from data_access_layer import DataAccessLayer
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import inspect
-
+from constants import field_labels
 
 class BuildingDescriptionDialog(QDialog):
     def __init__(self):
@@ -40,6 +40,7 @@ class BuildingDescriptionDialog(QDialog):
             ("Land_area", "numeric", None), ("notes", "VARCHAR(150)", None),
             ("author", "VARCHAR(150)", None)
         ]
+        
         self.show_bd_fields(layout)  # Call the function to create fields
         self.save_button = QPushButton("Save")
         self.save_button.clicked.connect(self.save_record)  # Connect save_record method to clicked signal
@@ -53,7 +54,7 @@ class BuildingDescriptionDialog(QDialog):
 
         # Add labels and line edits to the grid layout
         for label_text, data_type, _ in self.labels:
-            label = QLabel(label_text)
+            label = QLabel(field_labels.get(label_text, label_text).replace('_', ' '))  # Replacing underscores with spaces for better readability
             line_edit = QLineEdit()
             completer = QCompleter()
             line_edit.setCompleter(completer)
