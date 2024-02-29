@@ -26,7 +26,7 @@ class CrudOperations:
             else:
                 refreshTable(self, model_class_name, table_widget, addUpdateButton)
                 clearLineEdits(self, columns, layout)
-    
+        
     def refreshTable(self, model_class_name, table_widget, addUpdateButton):
         model_class = get_model_class(model_class_name)
         if model_class:
@@ -34,21 +34,9 @@ class CrudOperations:
             table_widget.clear()
 
             # Fetch data from the database table
-            if model_class_name == 'BuildingDescription':
-                # Fetch data for BuildingDescription without any additional processing
-                with engine.connect() as connection:
-                    result = connection.execute(model_class.__table__.select())
-                    rows = result.fetchall()
-            elif model_class_name == 'Street':
-                # Fetch data for Street with both street_name and ID_street
-                with engine.connect() as connection:
-                    result = connection.execute(model_class.__table__.select())
-                    rows = result.fetchall()
-            else:
-                # For other tables, fetch data without a join
-                with engine.connect() as connection:
-                    result = connection.execute(model_class.__table__.select())
-                    rows = result.fetchall()
+            with engine.connect() as connection:
+                result = connection.execute(model_class.__table__.select())
+                rows = result.fetchall()
 
             # Set the table dimensions based on the retrieved data
             if rows:
@@ -62,24 +50,40 @@ class CrudOperations:
 
                 # Populate the table with the fetched data
                 for row_idx, row in enumerate(rows):
-                    # For BuildingDescription, populate the table without modification
+                    # Call the appropriate method based on the model class name
                     if model_class_name == 'BuildingDescription':
-                        for col_idx, col in enumerate(row):
-                            item = QTableWidgetItem(str(col) if col is not None else '')
-                            table_widget.setItem(row_idx, col_idx, item)
-                    elif model_class_name == 'Street':
-                        # For Street table, populate with street_name and ID_street
-                        for col_idx, col in enumerate(row):
-                            item = QTableWidgetItem(str(col) if col is not None else '')
-                            table_widget.setItem(row_idx, col_idx, item)
+                        self.populateBuildingDescriptionTable(row_idx, row, table_widget)
                     else:
-                        # For other tables, directly populate the table with row data
-                        for col_idx, col in enumerate(row):
-                            item = QTableWidgetItem(str(col) if col is not None else '')
-                            table_widget.setItem(row_idx, col_idx, item)
+                        self.populateRegularTable(row_idx, row, table_widget)
 
                     # Add update button if required
                     addUpdateButton(self, row_idx, table_widget, model_class_name, addUpdateButton)
+
+    from sqlalchemy.orm import sessionmaker
+
+    # Assuming session is defined and bound to the database engine
+
+    def populateBuildingDescriptionTable(self, row_idx, row, table_widget):
+        for col_idx, col in enumerate(row):
+            if col_idx == 1:  # ID_street column
+                # Fetch the street_name using the data access layer
+                street_id = col
+                street_name = self.get_street_name(street_id)
+                item = QTableWidgetItem(street_name)
+            else:
+                item = QTableWidgetItem(str(col) if col is not None else '')
+            table_widget.setItem(row_idx, col_idx, item)
+
+    def get_street_name(self, street_id):
+        dal = DataAccessLayer(db_session)
+        # Fetch the street_name using the data access layer
+        street = dal.read(Street, ID_street=street_id)
+        return street[0].street_name if street else ""
+
+    def populateRegularTable(self, row_idx, row, table_widget):
+        for col_idx, col in enumerate(row):
+            item = QTableWidgetItem(str(col) if col is not None else '')
+            table_widget.setItem(row_idx, col_idx, item)
 
 
 
