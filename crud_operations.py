@@ -59,26 +59,10 @@ class CrudOperations:
                     # Add update button if required
                     addUpdateButton(self, row_idx, table_widget, model_class_name, addUpdateButton)
 
-    from sqlalchemy.orm import sessionmaker
-
-    # Assuming session is defined and bound to the database engine
-
     def populateBuildingDescriptionTable(self, row_idx, row, table_widget):
         for col_idx, col in enumerate(row):
-            if col_idx == 1:  # ID_street column
-                # Fetch the street_name using the data access layer
-                street_id = col
-                street_name = self.get_street_name(street_id)
-                item = QTableWidgetItem(street_name)
-            else:
-                item = QTableWidgetItem(str(col) if col is not None else '')
+            item = QTableWidgetItem(str(col) if col is not None else '')
             table_widget.setItem(row_idx, col_idx, item)
-
-    def get_street_name(self, street_id):
-        dal = DataAccessLayer(db_session)
-        # Fetch the street_name using the data access layer
-        street = dal.read(Street, ID_street=street_id)
-        return street[0].street_name if street else ""
 
     def populateRegularTable(self, row_idx, row, table_widget):
         for col_idx, col in enumerate(row):
