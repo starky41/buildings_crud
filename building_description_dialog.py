@@ -166,20 +166,25 @@ class BuildingDescriptionDialog(QDialog):
                         "priming", "load_bearing_walls_name", "basement_area", "building_roof_name",
                         "building_floor_name", "facade_name", "foundation_name", "azimuth", "cadastral_number",
                         "cadastral_cost", "year_overhaul", "accident_rate", "management_company_name",
-                        "Land_area", "notes", "author"]
+                        "Land_area", "notes", "author", "actions"]
         table_widget.setColumnCount(len(table_headers))
         table_widget.setHorizontalHeaderLabels(table_headers)
 
         # Adjusting header size to contents
         header = table_widget.horizontalHeader()
-        header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        header.ResizeMode(QHeaderView.ResizeMode.ResizeToContents)
 
         # Populate the table with data
         for row_index, row_data in enumerate(data):
             table_widget.insertRow(row_index)
             for col_index, header in enumerate(table_headers):
                 cell_value = ""
-                if hasattr(row_data, header):
+                if header == "actions":
+                    # Create a delete button for each row
+                    delete_button = QPushButton("Delete")
+                    delete_button.clicked.connect(lambda _, r=row_data: self.delete_record(r, table_widget))
+                    table_widget.setCellWidget(row_index, col_index, delete_button)
+                elif hasattr(row_data, header):
                     # Check if the attribute exists directly in BuildingDescription
                     cell_value = getattr(row_data, header)
                 elif hasattr(row_data, header + "_name"):
@@ -200,3 +205,68 @@ class BuildingDescriptionDialog(QDialog):
 
         # Show the dialog
         table_dialog.exec()
+
+    def delete_record(self, record, table_widget):
+        session = db_session()
+        session.delete(record)
+        session.commit()
+        session.close()
+
+        # Clear the existing table
+        table_widget.clearContents()
+        table_widget.setRowCount(0)
+
+        # Repopulate the table with updated data
+        self.populate_table(table_widget)
+
+    def populate_table(self, table_widget):
+        table_headers = ["street_name", "house", "building_body", "latitude", "longitude", "year_construction",
+                "number_floors", "number_entrances", "number_buildings", "number_living_quarters",
+                "title", "type_construction_name", "basic_project_name", "appointment_name",
+                "seismic_resistance_min", "seismic_resistance_max", "zone_SMZ_min", "zone_SMZ_max",
+                "priming", "load_bearing_walls_name", "basement_area", "building_roof_name",
+                "building_floor_name", "facade_name", "foundation_name", "azimuth", "cadastral_number",
+                "cadastral_cost", "year_overhaul", "accident_rate", "management_company_name",
+                "Land_area", "notes", "author", "actions"]
+
+        # Fetch data from the database with eager loading of related attributes
+        session = db_session()
+        data = session.query(BuildingDescription).options(
+            joinedload(BuildingDescription.street),
+            joinedload(BuildingDescription.type_construction),
+            joinedload(BuildingDescription.basic_project),
+            joinedload(BuildingDescription.appointment),
+            joinedload(BuildingDescription.load_bearing_walls),
+            joinedload(BuildingDescription.building_roof),
+            joinedload(BuildingDescription.building_floor),
+            joinedload(BuildingDescription.facade),
+            joinedload(BuildingDescription.foundation),
+            joinedload(BuildingDescription.management_company)
+        ).all()
+
+        # Populate the table with data
+        for row_index, row_data in enumerate(data):
+            table_widget.insertRow(row_index)
+            for col_index, header in enumerate(table_headers):
+                cell_value = ""
+                if header == "actions":
+                    # Create a delete button for each row
+                    delete_button = QPushButton("Delete")
+                    delete_button.clicked.connect(lambda _, r=row_data, tw=table_widget: self.delete_record(r, tw))
+
+                    table_widget.setCellWidget(row_index, col_index, delete_button)
+                elif hasattr(row_data, header):
+                    # Check if the attribute exists directly in BuildingDescription
+                    cell_value = getattr(row_data, header)
+                elif hasattr(row_data, header + "_name"):
+                    # Check if the attribute exists with "_name" suffix (indicating the name of the related object)
+                    cell_value = getattr(row_data, header + "_name")
+                else:
+                    # Handle the case where the attribute does not exist directly or as a related object's name
+                    # Assume it's a foreign key and retrieve the related object's name
+                    related_model_name = header.replace("_name", "")
+                    related_instance = getattr(row_data, related_model_name, None)
+                    if related_instance:
+                        # Check if the attribute exists in the related model
+                        cell_value = getattr(related_instance, related_model_name + "_name", "")
+                table_widget.setItem(row_index, col_index, QTableWidgetItem(str(cell_value)))
