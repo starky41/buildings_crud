@@ -11,7 +11,8 @@ from data_access_layer import DataAccessLayer
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import inspect
 from constants import field_labels
-
+from PyQt6.QtWidgets import QTableWidget, QTableWidgetItem, QHeaderView
+from sqlalchemy.orm import joinedload
 class BuildingDescriptionDialog(QDialog):
     def __init__(self):
         super().__init__()
@@ -45,6 +46,10 @@ class BuildingDescriptionDialog(QDialog):
         self.save_button = QPushButton("Save")
         self.save_button.clicked.connect(self.save_record)  # Connect save_record method to clicked signal
         layout.addWidget(self.save_button)  # Add a save button or any other buttons as needed
+
+        self.view_table_button = QPushButton("View Table")
+        self.view_table_button.clicked.connect(self.view_table)
+        layout.addWidget(self.view_table_button)
 
     def show_bd_fields(self, layout):
         # Create a QGridLayout
@@ -131,3 +136,71 @@ class BuildingDescriptionDialog(QDialog):
 
         # Optionally, refresh the table or perform any other necessary actions
         print("New record added successfully!")
+
+    def view_table(self):
+        # Fetch data from the database with eager loading of related attributes
+        session = db_session()
+        data = session.query(BuildingDescription).options(
+            joinedload(BuildingDescription.street),
+            joinedload(BuildingDescription.type_construction),
+            joinedload(BuildingDescription.basic_project),
+            joinedload(BuildingDescription.appointment),
+            joinedload(BuildingDescription.load_bearing_walls),
+            joinedload(BuildingDescription.building_roof),
+            joinedload(BuildingDescription.building_floor),
+            joinedload(BuildingDescription.facade),
+            joinedload(BuildingDescription.foundation),
+            joinedload(BuildingDescription.management_company)
+        ).all()
+
+        # Create a new dialog to display the table
+        table_dialog = QDialog(self)
+        table_layout = QVBoxLayout()
+        table_dialog.setLayout(table_layout)
+
+        table_widget = QTableWidget()
+        table_headers = ["street_name", "house", "building_body", "latitude", "longitude", "year_construction",
+                        "number_floors", "number_entrances", "number_buildings", "number_living_quarters",
+                        "title", "type_construction_name", "basic_project_name", "appointment_name",
+                        "seismic_resistance_min", "seismic_resistance_max", "zone_SMZ_min", "zone_SMZ_max",
+                        "priming", "load_bearing_walls_name", "basement_area", "building_roof_name",
+                        "building_floor_name", "facade_name", "foundation_name", "azimuth", "cadastral_number",
+                        "cadastral_cost", "year_overhaul", "accident_rate", "management_company_name",
+                        "Land_area", "notes", "author"]
+        table_widget.setColumnCount(len(table_headers))
+        table_widget.setHorizontalHeaderLabels(table_headers)
+
+        # Adjusting header size to contents
+        header = table_widget.horizontalHeader()
+        header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+
+        # Populate the table with data
+        for row_index, row_data in enumerate(data):
+            table_widget.insertRow(row_index)
+            for col_index, header in enumerate(table_headers):
+                if hasattr(row_data, header):
+                    cell_value = getattr(row_data, header)
+                    if cell_value is not None:
+                        cell_value = str(cell_value)
+                    else:
+                        cell_value = ""
+                else:
+                    # Handle the case where the attribute does not exist (not a direct column of BuildingDescription)
+                    # Assume it's a foreign key and retrieve the related name
+                    if header.endswith("_name"):
+                        related_model_name = header.replace("_name", "")
+                        related_instance = getattr(row_data, related_model_name, None)
+                        if related_instance:
+                            # Check if the attribute exists in the related model
+                            cell_value = getattr(related_instance, related_model_name, "")
+                        else:
+                            cell_value = ""
+                table_widget.setItem(row_index, col_index, QTableWidgetItem(cell_value))
+
+
+        # Add the table widget to the dialog layout
+        table_layout.addWidget(table_widget)
+
+        # Show the dialog
+        table_dialog.exec()
+            

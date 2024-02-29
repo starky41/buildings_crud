@@ -4,6 +4,7 @@ from PyQt6.QtWidgets import QMessageBox, QTableWidgetItem, QPushButton, QDialog,
 from data_access_layer import DataAccessLayer
 from database import engine, db_session
 from get_model_class import get_model_class
+from models import Street
 class CrudOperations:
 
     def createItem(self, model_class_name, db_session, DataAccessLayer, refreshTable, clearLineEdits, table_widget, addUpdateButton, layout):
@@ -33,24 +34,77 @@ class CrudOperations:
             table_widget.clear()
 
             # Fetch data from the database table
-            with engine.connect() as connection:
-                result = connection.execute(model_class.__table__.select())
-                rows = result.fetchall()
+            if model_class_name == 'BuildingDescription':
+                # Fetch data with a join on Street table to get street_name
+                query = db_session.query(model_class, Street.street_name).join(Street)
+                rows = query.all()
+            else:
+                # For other tables, fetch data without a join
+                with engine.connect() as connection:
+                    result = connection.execute(model_class.__table__.select())
+                    rows = result.fetchall()
 
             # Set the table dimensions based on the retrieved data
-            table_widget.setRowCount(len(rows))
-            table_widget.setColumnCount(len(model_class.__table__.columns))
+            if rows:
+                table_widget.setRowCount(len(rows))
 
-            # Populate the table with the fetched data
-            for row_idx, row in enumerate(rows):
-                for col_idx, col in enumerate(row):
-                    item = QTableWidgetItem(str(col))
-                    table_widget.setItem(row_idx, col_idx, item)
-                addUpdateButton(self, row_idx, table_widget, model_class_name, addUpdateButton)
+                # Determine the column count and headers
+                headers = []
+                column_count = 0
 
-            # Set table headers
-            headers = [str(col) for col in model_class.__table__.columns.keys()]
-            table_widget.setHorizontalHeaderLabels(headers)
+                for col in model_class.__table__.columns:
+                    if col.key != 'ID_street':  # Exclude ID_street column
+                        if col.key == 'ID_building':
+                            headers.append('ID_building')
+                            column_count += 1
+                        elif col.key != 'ID_building' and col.key != 'street_name':
+                            headers.append(col.key)
+                            column_count += 1
+
+                if model_class_name == 'BuildingDescription':
+                    # For BuildingDescription, add street_name column after ID_building
+                    headers.insert(headers.index('ID_building') + 1, 'street_name')
+                    column_count += 1
+
+                table_widget.setColumnCount(column_count)
+
+                # Populate the table with the fetched data
+                for row_idx, row in enumerate(rows):
+                    if model_class_name == 'BuildingDescription':
+                        # Extract data from the row
+                        building_description, street_name = row
+
+                        # Set columns for building description data
+                        col_idx = 0
+                        for col in model_class.__table__.columns:
+                            if col.key != 'ID_street':  # Exclude ID_street column
+                                if col.key == 'ID_building':
+                                    item = QTableWidgetItem(str(getattr(building_description, col.key)))
+                                    table_widget.setItem(row_idx, col_idx, item)
+                                    col_idx += 1
+
+                                    # Insert street_name column after ID_building
+                                    street_item = QTableWidgetItem(str(street_name) if street_name is not None else '')
+                                    table_widget.setItem(row_idx, col_idx, street_item)
+                                    col_idx += 1
+                                elif col.key != 'ID_building' and col.key != 'street_name':
+                                    item = QTableWidgetItem(str(getattr(building_description, col.key)) if getattr(building_description, col.key) is not None else '')
+                                    table_widget.setItem(row_idx, col_idx, item)
+                                    col_idx += 1
+
+                    else:
+                        # For other tables, directly populate the table with row data
+                        for col_idx, col in enumerate(row):
+                            item = QTableWidgetItem(str(col) if col is not None else '')
+                            table_widget.setItem(row_idx, col_idx, item)
+
+                    # Add update button if required
+                    addUpdateButton(self, row_idx, table_widget, model_class_name, addUpdateButton)
+
+                # Set table headers
+                table_widget.setHorizontalHeaderLabels(headers)
+
+
 
     def addUpdateButton(self, row_idx, table_widget, model_class_name, addUpdateButton):
         
