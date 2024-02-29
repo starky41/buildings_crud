@@ -124,5 +124,9 @@ class BuildingDescriptionDialog(QDialog):
         session.commit()
         session.close()
 
+        # Clear line edits
+        for line_edit in self.line_edits.values():
+            line_edit.clear()
+
         # Optionally, refresh the table or perform any other necessary actions
         print("New record added successfully!")
