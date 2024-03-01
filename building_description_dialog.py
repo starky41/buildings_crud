@@ -14,6 +14,26 @@ from constants import field_labels
 from PyQt6.QtWidgets import QTableWidget, QTableWidgetItem, QHeaderView
 from sqlalchemy.orm import joinedload
 from PyQt6.QtCore import Qt
+
+class SortableTableWidget(QTableWidget):
+    def __init__(self):
+        super().__init__()
+
+        # Connect the header clicked signal to the sorting function
+        self.horizontalHeader().sectionClicked.connect(self.sort_column)
+        self.last_sorted_column = None
+        self.sort_order = Qt.SortOrder.AscendingOrder
+
+    def sort_column(self, logical_index):
+        # If the same column header is clicked, toggle the sort order
+        if logical_index == self.last_sorted_column:
+            self.sort_order = Qt.SortOrder.DescendingOrder if self.sort_order == Qt.SortOrder.AscendingOrder else Qt.SortOrder.AscendingOrder
+        else:
+            self.last_sorted_column = logical_index
+            self.sort_order = Qt.SortOrder.AscendingOrder
+
+        # Sort the table by the clicked column
+        self.sortItems(logical_index, self.sort_order)
 class BuildingDescriptionDialog(QDialog):
     def __init__(self):
         super().__init__()
@@ -159,7 +179,7 @@ class BuildingDescriptionDialog(QDialog):
         table_layout = QVBoxLayout()
         table_dialog.setLayout(table_layout)
 
-        table_widget = QTableWidget()
+        table_widget = SortableTableWidget()
         table_headers = ["ID_building", "street_name", "house", "building_body", "latitude", "longitude", "year_construction",
                         "number_floors", "number_entrances", "number_buildings", "number_living_quarters",
                         "title", "type_construction_name", "basic_project_name", "appointment_name",
@@ -170,10 +190,6 @@ class BuildingDescriptionDialog(QDialog):
                         "Land_area", "notes", "author"]
         table_widget.setColumnCount(len(table_headers))
         table_widget.setHorizontalHeaderLabels(table_headers)
-
-        # Set default sort column to ID_building
-        default_sort_column = table_headers.index("ID_building")
-        table_widget.sortItems(default_sort_column, Qt.SortOrder.AscendingOrder)
 
         # Adjusting header size to contents
         header = table_widget.horizontalHeader()
@@ -211,7 +227,6 @@ class BuildingDescriptionDialog(QDialog):
         # Show the dialog
         table_dialog.exec()
 
-
     def delete_selected_record(self, table_widget):
         selected_rows = table_widget.selectionModel().selectedRows()
         if not selected_rows:
@@ -233,12 +248,13 @@ class BuildingDescriptionDialog(QDialog):
         if record:
             session.delete(record)
             session.commit()
+            session.close()
+            # Remove the row from the table
+            table_widget.removeRow(row_index)
             QMessageBox.information(self, "Success", "Record deleted successfully.")
         else:
             QMessageBox.warning(self, "Warning", "Record not found.")
-        session.close()
-        # Refresh the table after deletion
-        self.populate_table(table_widget)
+
 
     def populate_table(self, table_widget):
         table_headers = ["street_name", "house", "building_body", "latitude", "longitude", "year_construction",
