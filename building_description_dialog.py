@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QGridLayout, QLabel, QLineEdit, QPushButton, QCompleter
+    QDialog, QVBoxLayout, QGridLayout, QLabel, QLineEdit, QPushButton, QCompleter, QMessageBox
 )
 from PyQt6.QtGui import QIntValidator, QDoubleValidator
 from sqlalchemy.orm import sessionmaker
@@ -13,6 +13,7 @@ from sqlalchemy import inspect
 from constants import field_labels
 from PyQt6.QtWidgets import QTableWidget, QTableWidgetItem, QHeaderView
 from sqlalchemy.orm import joinedload
+from PyQt6.QtCore import Qt
 class BuildingDescriptionDialog(QDialog):
     def __init__(self):
         super().__init__()
@@ -159,16 +160,20 @@ class BuildingDescriptionDialog(QDialog):
         table_dialog.setLayout(table_layout)
 
         table_widget = QTableWidget()
-        table_headers = ["street_name", "house", "building_body", "latitude", "longitude", "year_construction",
+        table_headers = ["ID_building", "street_name", "house", "building_body", "latitude", "longitude", "year_construction",
                         "number_floors", "number_entrances", "number_buildings", "number_living_quarters",
                         "title", "type_construction_name", "basic_project_name", "appointment_name",
                         "seismic_resistance_min", "seismic_resistance_max", "zone_SMZ_min", "zone_SMZ_max",
                         "priming", "load_bearing_walls_name", "basement_area", "building_roof_name",
                         "building_floor_name", "facade_name", "foundation_name", "azimuth", "cadastral_number",
                         "cadastral_cost", "year_overhaul", "accident_rate", "management_company_name",
-                        "Land_area", "notes", "author", "actions"]
+                        "Land_area", "notes", "author"]
         table_widget.setColumnCount(len(table_headers))
         table_widget.setHorizontalHeaderLabels(table_headers)
+
+        # Set default sort column to ID_building
+        default_sort_column = table_headers.index("ID_building")
+        table_widget.sortItems(default_sort_column, Qt.SortOrder.AscendingOrder)
 
         # Adjusting header size to contents
         header = table_widget.horizontalHeader()
@@ -179,12 +184,7 @@ class BuildingDescriptionDialog(QDialog):
             table_widget.insertRow(row_index)
             for col_index, header in enumerate(table_headers):
                 cell_value = ""
-                if header == "actions":
-                    # Create a delete button for each row
-                    delete_button = QPushButton("Delete")
-                    delete_button.clicked.connect(lambda _, r=row_data: self.delete_record(r, table_widget))
-                    table_widget.setCellWidget(row_index, col_index, delete_button)
-                elif hasattr(row_data, header):
+                if hasattr(row_data, header):
                     # Check if the attribute exists directly in BuildingDescription
                     cell_value = getattr(row_data, header)
                 elif hasattr(row_data, header + "_name"):
@@ -203,20 +203,41 @@ class BuildingDescriptionDialog(QDialog):
         # Add the table widget to the dialog layout
         table_layout.addWidget(table_widget)
 
+        # Add a delete button below the table
+        delete_button = QPushButton("Delete Selected Record")
+        delete_button.clicked.connect(lambda: self.delete_selected_record(table_widget))
+        table_layout.addWidget(delete_button)
+
         # Show the dialog
         table_dialog.exec()
 
-    def delete_record(self, record, table_widget):
+
+    def delete_selected_record(self, table_widget):
+        selected_rows = table_widget.selectionModel().selectedRows()
+        if not selected_rows:
+            QMessageBox.warning(self, "Warning", "Please select a record to delete.")
+            return
+
+        # Assuming only one row can be selected at a time
+        row_index = selected_rows[0].row()
+        cell_text = table_widget.item(row_index, 0).text()  # Assuming the first column contains the primary key
+        print("Cell Text:", cell_text)  # Add this line for debugging
+        try:
+            record_id = int(cell_text)
+        except ValueError:
+            QMessageBox.warning(self, "Error", "Invalid record ID.")
+            return
+
         session = db_session()
-        session.delete(record)
-        session.commit()
+        record = session.query(BuildingDescription).get(record_id)
+        if record:
+            session.delete(record)
+            session.commit()
+            QMessageBox.information(self, "Success", "Record deleted successfully.")
+        else:
+            QMessageBox.warning(self, "Warning", "Record not found.")
         session.close()
-
-        # Clear the existing table
-        table_widget.clearContents()
-        table_widget.setRowCount(0)
-
-        # Repopulate the table with updated data
+        # Refresh the table after deletion
         self.populate_table(table_widget)
 
     def populate_table(self, table_widget):
