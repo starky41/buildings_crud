@@ -34,6 +34,7 @@ class SortableTableWidget(QTableWidget):
 
         # Sort the table by the clicked column
         self.sortItems(logical_index, self.sort_order)
+
 class BuildingDescriptionDialog(QDialog):
     def __init__(self):
         super().__init__()
@@ -124,6 +125,14 @@ class BuildingDescriptionDialog(QDialog):
     def save_record(self):
         # Get data from the form fields
         data = {}
+        required_fields = ["ID_street", "house"]  # Specify the required fields
+
+        # Check if the required fields are empty
+        for field in required_fields:
+            if not self.line_edits[field].text():
+                QMessageBox.warning(self, "Warning", f"Please enter a value for {field}.")
+                return
+
         for label_text, _, _ in self.labels:
             line_edit = self.line_edits[label_text]
             value = line_edit.text()
@@ -141,6 +150,9 @@ class BuildingDescriptionDialog(QDialog):
                     session.close()
                     if related_instance:
                         data[label_text] = getattr(related_instance, "ID_" + related_model.__tablename__)
+                    else:
+                        QMessageBox.warning(self, "Warning", f"No matching record found for {name_value} in {related_model.__tablename__}.")
+                        return
 
         # Create a new instance of BuildingDescription with the data
         new_building = BuildingDescription(**data)
@@ -157,7 +169,6 @@ class BuildingDescriptionDialog(QDialog):
 
         # Optionally, refresh the table or perform any other necessary actions
         print("New record added successfully!")
-
     def view_table(self):
         # Fetch data from the database with eager loading of related attributes
         session = db_session()
@@ -224,8 +235,13 @@ class BuildingDescriptionDialog(QDialog):
         delete_button.clicked.connect(lambda: self.delete_selected_record(table_widget))
         table_layout.addWidget(delete_button)
 
+        # Add an update button below the table
+        update_button = QPushButton("Update Selected Record")
+        update_button.clicked.connect(lambda: self.update_record(table_widget))
+        table_layout.addWidget(update_button)
+
         # Show the dialog
-        table_dialog.exec()
+        table_dialog.show()
 
     def delete_selected_record(self, table_widget):
         selected_rows = table_widget.selectionModel().selectedRows()
@@ -306,4 +322,84 @@ class BuildingDescriptionDialog(QDialog):
                     if related_instance:
                         # Check if the attribute exists in the related model
                         cell_value = getattr(related_instance, related_model_name + "_name", "")
-                table_widget.setItem(row_index, col_index, QTableWidgetItem(str(cell_value)))
+                    table_widget.setItem(row_index, col_index, QTableWidgetItem(str(cell_value)))
+
+    def update_record(self, table_widget):
+        # Fetch selected record's data
+        selected_rows = table_widget.selectionModel().selectedRows()
+        if not selected_rows:
+            QMessageBox.warning(self, "Warning", "Please select a record to update.")
+            return
+
+        row_index = selected_rows[0].row()
+        record_id = int(table_widget.item(row_index, 0).text())
+
+        session = db_session()
+        record = session.query(BuildingDescription).get(record_id)
+        if not record:
+            QMessageBox.warning(self, "Warning", "Record not found.")
+            return
+
+        # Populate dialog fields with existing data
+        for label_text, _, related_model in self.labels:
+            line_edit = self.line_edits[label_text]
+            if label_text.startswith("ID_") and related_model:
+                # If it's a foreign key, load the name instead of the ID
+                related_instance = getattr(record, label_text[3:].lower())
+                if related_instance:
+                    line_edit.setText(getattr(related_instance, label_text[3:].lower() + "_name", ""))
+            else:
+                # Otherwise, load the data directly
+                value = getattr(record, label_text, None)
+                if value is not None:
+                    line_edit.setText(str(value))
+                else:
+                    line_edit.clear()
+
+        # Open the dialog for editing
+        self.exec()
+
+        # Update the record with edited data
+        for label_text, _, related_model in self.labels:
+            line_edit = self.line_edits[label_text]
+            value = line_edit.text()
+            if label_text.startswith("ID_") and related_model:
+                # If it's a foreign key, convert the name to ID
+                name_value = value
+                if name_value:  # Check if value is not an empty string
+                    related_instance = session.query(related_model).filter_by(**{related_model.__tablename__ + "_name": name_value}).first()
+                    if related_instance:
+                        # Use the primary key attribute of the related object
+                        if label_text == "ID_type_construction":
+                            setattr(record, label_text, related_instance.ID_type_construction)  # Adjust with the correct attribute
+                        
+                        elif label_text == "ID_type_construction":
+                            setattr(record, label_text, related_instance.ID_type_construction)  # Adjust with the correct attribute
+                        elif label_text == "ID_basic_project":
+                            setattr(record, label_text, related_instance.ID_basic_project)  # Adjust with the correct attribute
+                        elif label_text == "ID_appointment":
+                            setattr(record, label_text, related_instance.ID_appointment)  # Adjust with the correct attribute
+                        elif label_text == "ID_load_bearing_walls":
+                            setattr(record, label_text, related_instance.ID_load_bearing_walls)  # Adjust with the correct attribute
+                        elif label_text == "ID_building_roof":
+                            setattr(record, label_text, related_instance.ID_building_roof)  # Adjust with the correct attribute
+                        # Add more conditions for other related models as needed
+                        elif label_text == "ID_building_floor":
+                            setattr(record, label_text, related_instance.ID_building_floor)  # Adjust with the correct attribute
+                        elif label_text == "ID_facade":
+                            setattr(record, label_text, related_instance.ID_facade)  # Adjust with the correct attribute
+                        elif label_text == "ID_management_company":
+                            setattr(record, label_text, related_instance.ID_management_company)  # Adjust with the correct attribute
+                else:
+                    setattr(record, label_text, None)  # Set to None if value is empty
+            elif value != '':  # Check if value is not an empty string
+                setattr(record, label_text, value)
+            else:
+                setattr(record, label_text, None)  # Set to None if value is empty
+
+        session.commit()
+        session.close()
+
+        # Optionally, refresh the table or perform any other necessary actions
+        print("Record updated successfully!")
+
