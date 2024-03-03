@@ -43,12 +43,12 @@ class CrudWindow(QWidget):
             self.layout.addWidget(self.table_widget)
 
             # Add a Refresh button to reload the data
-            refresh_button = QPushButton("Обновить")
-            refresh_button.clicked.connect(lambda: CrudOperations.refreshTable(self, self.model_class_name, self.table_widget, CrudOperations.addUpdateButton))
-            self.layout.addWidget(refresh_button)
+            # refresh_button = QPushButton("Обновить")
+            # refresh_button.clicked.connect(lambda: CrudOperations.refreshTable(self, self.model_class_name, self.table_widget, CrudOperations.addUpdateButton))
+            # self.layout.addWidget(refresh_button)
 
             # Add a Delete button with an icon
-            delete_button = QPushButton()
+            delete_button = QPushButton("Удалить")
             delete_button.setIcon(QIcon("icons/trashbin.png"))
             delete_button.clicked.connect(lambda: CrudOperations.deleteSelectedItems(self, self.table_widget, self.model_class_name, db_session, CrudOperations.refreshTable))
             self.layout.addWidget(delete_button)

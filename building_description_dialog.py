@@ -1,19 +1,15 @@
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QGridLayout, QLabel, QLineEdit, QPushButton, QCompleter, QMessageBox
+    QDialog, QVBoxLayout, QLabel, QLineEdit, QPushButton, QCompleter, QMessageBox,
+    QHBoxLayout, QGridLayout, QTableWidget, QTableWidgetItem, QHeaderView
 )
 from PyQt6.QtGui import QIntValidator, QDoubleValidator
+from PyQt6.QtCore import QStringListModel, Qt
 from sqlalchemy.orm import sessionmaker
 from models import Street, TypeConstruction, BasicProject, Appointment, LoadBearingWalls, \
     BuildingRoof, BuildingFloor, Facade, Foundation, ManagementCompany, BuildingDescription
-from PyQt6.QtCore import QStringListModel
 from database import db_session
-from data_access_layer import DataAccessLayer
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy import inspect
 from constants import field_labels
-from PyQt6.QtWidgets import QTableWidget, QTableWidgetItem, QHeaderView
 from sqlalchemy.orm import joinedload
-from PyQt6.QtCore import Qt
 
 class SortableTableWidget(QTableWidget):
     def __init__(self):
@@ -35,16 +31,84 @@ class SortableTableWidget(QTableWidget):
         # Sort the table by the clicked column
         self.sortItems(logical_index, self.sort_order)
 
-class BuildingDescriptionDialog(QDialog):
-    def __init__(self):
+class UpdateRecordDialog(QDialog):
+    def __init__(self, record_data):
         super().__init__()
-        self.setWindowTitle("Add Record")
+        self.setWindowTitle("Update Record")
+        self.record_data = record_data
         self.initUI()
 
     def initUI(self):
         layout = QVBoxLayout()
         self.setLayout(layout)
         self.line_edits = {}  # Initialize a dictionary to store line edits
+
+        grid_layout = QGridLayout()
+        layout.addLayout(grid_layout)
+
+        for idx, (label_text, value) in enumerate(self.record_data.items()):
+            label = QLabel(label_text.replace('_', ' '))  # Replacing underscores with spaces for better readability
+            line_edit = QLineEdit(str(value))
+            grid_layout.addWidget(label, idx // 2, idx % 2 * 2)  # Add the label and line edit to the grid
+            grid_layout.addWidget(line_edit, idx // 2, idx % 2 * 2 + 1)
+            self.line_edits[label_text] = line_edit  # Store line edit in the dictionary
+
+            # If line edit is empty, set it to an empty string instead of "None"
+            if not value:
+                line_edit.setText("")
+
+        save_button = QPushButton("Save")
+        save_button.clicked.connect(self.update_record)
+        layout.addWidget(save_button)
+
+    def update_record(self):
+        # Get updated data from the form fields
+        updated_data = {}
+
+        for label_text, line_edit in self.line_edits.items():
+            value = line_edit.text()
+            # Convert empty strings to None
+            if value == '':
+                updated_data[label_text] = None
+            else:
+                updated_data[label_text] = value
+
+        # Update the record in the database
+        session = db_session()
+        record_id = self.record_data.get("ID_building")  
+        record = session.query(BuildingDescription).filter_by(ID_building=record_id).first()
+        if record:
+            for key, value in updated_data.items():
+                setattr(record, key, value)
+            session.commit()
+            QMessageBox.information(self, "Success", "Record updated successfully.")
+            self.close()
+        else:
+            QMessageBox.warning(self, "Error", "Record not found.")
+        session.close()
+
+
+
+class AddRecordDialog(QDialog):
+    def __init__(self, record_data=None):
+        self.line_edits = {}  # Initialize line edits dictionary
+        self.foreign_keys = {}  # Initialize dictionary to store foreign key name-value pairs
+        super().__init__()
+        self.setWindowTitle("Add Record")
+        self.initUI()
+        self.record_data = record_data 
+        # If record_data is provided, pre-fill the fields with its values
+        if record_data:
+            for label_text, line_edit in self.line_edits.items():
+                if label_text in record_data:
+                    line_edit.setText(str(record_data[label_text]))
+            # Pre-fill foreign key fields
+            for fk_label, fk_value in self.foreign_keys.items():
+                self.line_edits[fk_label].setText(fk_value)
+
+    def initUI(self):
+        layout = QVBoxLayout()
+        self.setLayout(layout)
         self.labels = [  # Store labels and their respective data types
             ("ID_street", "VARCHAR(150)", Street), ("house", "int", None), ("building_body", "int", None),
             ("latitude", "numeric", None), ("longitude", "numeric", None), ("year_construction", "int", None),
@@ -63,15 +127,11 @@ class BuildingDescriptionDialog(QDialog):
             ("Land_area", "numeric", None), ("notes", "VARCHAR(150)", None),
             ("author", "VARCHAR(150)", None)
         ]
-        
+
         self.show_bd_fields(layout)  # Call the function to create fields
         self.save_button = QPushButton("Save")
         self.save_button.clicked.connect(self.save_record)  # Connect save_record method to clicked signal
         layout.addWidget(self.save_button)  # Add a save button or any other buttons as needed
-
-        self.view_table_button = QPushButton("View Table")
-        self.view_table_button.clicked.connect(self.view_table)
-        layout.addWidget(self.view_table_button)
 
     def show_bd_fields(self, layout):
         # Create a QGridLayout
@@ -113,6 +173,10 @@ class BuildingDescriptionDialog(QDialog):
                     # Create a QStringListModel and set it as the model for the completer
                     completer_model = QStringListModel(name_values)
                     completer.setModel(completer_model)
+
+                    # Store foreign key name-value pairs
+                    for item in data:
+                        self.foreign_keys[label_text] = str(getattr(item, name_attribute))
             else:
                 # Add validators for fields where applicable
                 if "int" in data_type:
@@ -163,13 +227,62 @@ class BuildingDescriptionDialog(QDialog):
         session.commit()
         session.close()
 
-        # Clear line edits
+        QMessageBox.information(self, "Success", "Record added successfully.")
+        self.clear_fields()
+        self.close()
+
+    def clear_fields(self):
         for line_edit in self.line_edits.values():
             line_edit.clear()
 
-        # Optionally, refresh the table or perform any other necessary actions
-        print("New record added successfully!")
-    def view_table(self):
+
+class MainDialog(QDialog):
+    table_headers = ["ID_building", "street_name", "house", "building_body", "latitude", "longitude", "year_construction",
+                    "number_floors", "number_entrances", "number_buildings", "number_living_quarters",
+                    "title", "type_construction_name", "basic_project_name", "appointment_name",
+                    "seismic_resistance_min", "seismic_resistance_max", "zone_SMZ_min", "zone_SMZ_max",
+                    "priming", "load_bearing_walls_name", "basement_area", "building_roof_name",
+                    "building_floor_name", "facade_name", "foundation_name", "azimuth", "cadastral_number",
+                    "cadastral_cost", "year_overhaul", "accident_rate", "management_company_name",
+                    "Land_area", "notes", "author"]
+
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Main Window")
+        self.initUI()
+
+        # Initialize substituted_values dictionary
+        self.substituted_values = {}
+
+    def initUI(self):
+        layout = QVBoxLayout()
+        self.setLayout(layout)
+
+        self.table_widget = QTableWidget()
+        self.table_widget.setColumnCount(len(self.table_headers))
+        self.table_widget.setHorizontalHeaderLabels(self.table_headers)
+        layout.addWidget(self.table_widget)
+
+        # Add buttons for Delete, Update, and Add Record
+        button_layout = QHBoxLayout()
+        layout.addLayout(button_layout)
+
+        delete_button = QPushButton("Delete Selected Record")
+        delete_button.clicked.connect(self.delete_selected_record)
+        button_layout.addWidget(delete_button)
+
+        update_button = QPushButton("Update Selected Record")
+        update_button.clicked.connect(self.update_record)
+        button_layout.addWidget(update_button)
+
+        add_record_button = QPushButton("Add Record")
+        add_record_button.clicked.connect(self.add_record)
+        button_layout.addWidget(add_record_button)
+
+        # Populate the table with data
+        self.populate_table()
+
+    def populate_table(self):
         # Fetch data from the database with eager loading of related attributes
         session = db_session()
         data = session.query(BuildingDescription).options(
@@ -185,32 +298,13 @@ class BuildingDescriptionDialog(QDialog):
             joinedload(BuildingDescription.management_company)
         ).all()
 
-        # Create a new dialog to display the table
-        table_dialog = QDialog(self)
-        table_layout = QVBoxLayout()
-        table_dialog.setLayout(table_layout)
-
-        table_widget = SortableTableWidget()
-        table_headers = ["ID_building", "street_name", "house", "building_body", "latitude", "longitude", "year_construction",
-                        "number_floors", "number_entrances", "number_buildings", "number_living_quarters",
-                        "title", "type_construction_name", "basic_project_name", "appointment_name",
-                        "seismic_resistance_min", "seismic_resistance_max", "zone_SMZ_min", "zone_SMZ_max",
-                        "priming", "load_bearing_walls_name", "basement_area", "building_roof_name",
-                        "building_floor_name", "facade_name", "foundation_name", "azimuth", "cadastral_number",
-                        "cadastral_cost", "year_overhaul", "accident_rate", "management_company_name",
-                        "Land_area", "notes", "author"]
-        table_widget.setColumnCount(len(table_headers))
-        table_widget.setHorizontalHeaderLabels(table_headers)
-
-        # Adjusting header size to contents
-        header = table_widget.horizontalHeader()
-        header.ResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.table_widget.setRowCount(len(data))
 
         # Populate the table with data
         for row_index, row_data in enumerate(data):
-            table_widget.insertRow(row_index)
-            for col_index, header in enumerate(table_headers):
+            for col_index, header in enumerate(self.table_headers):
                 cell_value = ""
+
                 if hasattr(row_data, header):
                     # Check if the attribute exists directly in BuildingDescription
                     cell_value = getattr(row_data, header)
@@ -225,34 +319,48 @@ class BuildingDescriptionDialog(QDialog):
                     if related_instance:
                         # Check if the attribute exists in the related model
                         cell_value = getattr(related_instance, related_model_name + "_name", "")
-                table_widget.setItem(row_index, col_index, QTableWidgetItem(str(cell_value)))
 
-        # Add the table widget to the dialog layout
-        table_layout.addWidget(table_widget)
+                # Set the cell value in the table
+                cell_value = str(cell_value) if cell_value is not None else ""  # Convert None to empty string
+                self.table_widget.setItem(row_index, col_index, QTableWidgetItem(cell_value))
 
-        # Add a delete button below the table
-        delete_button = QPushButton("Delete Selected Record")
-        delete_button.clicked.connect(lambda: self.delete_selected_record(table_widget))
-        table_layout.addWidget(delete_button)
+        session.close()
 
-        # Add an update button below the table
-        update_button = QPushButton("Update Selected Record")
-        update_button.clicked.connect(lambda: self.update_record(table_widget))
-        table_layout.addWidget(update_button)
+    def update_record(self):
+        selected_rows = self.table_widget.selectionModel().selectedRows()
+        if not selected_rows:
+            QMessageBox.warning(self, "Warning", "Please select a record to update.")
+            return
 
-        # Show the dialog
-        table_dialog.show()
+        row_index = selected_rows[0].row()
+        record_data = {}
+        for col_index, header in enumerate(self.table_headers):
+ 
+            record_data[header] = self.table_widget.item(row_index, col_index).text()
 
-    def delete_selected_record(self, table_widget):
-        selected_rows = table_widget.selectionModel().selectedRows()
+        update_dialog = UpdateRecordDialog(record_data)
+        update_dialog.exec()
+
+        self.populate_table()
+
+
+
+    def add_record(self):
+        # Open the Add Record dialog
+        add_record_dialog = AddRecordDialog()
+        add_record_dialog.exec()
+
+        # Refresh the table after adding a record
+        self.populate_table()
+    def delete_selected_record(self):
+        selected_rows = self.table_widget.selectionModel().selectedRows()
         if not selected_rows:
             QMessageBox.warning(self, "Warning", "Please select a record to delete.")
             return
 
         # Assuming only one row can be selected at a time
         row_index = selected_rows[0].row()
-        cell_text = table_widget.item(row_index, 0).text()  # Assuming the first column contains the primary key
-        print("Cell Text:", cell_text)  # Add this line for debugging
+        cell_text = self.table_widget.item(row_index, 0).text()  # Assuming the first column contains the primary key
         try:
             record_id = int(cell_text)
         except ValueError:
@@ -266,140 +374,7 @@ class BuildingDescriptionDialog(QDialog):
             session.commit()
             session.close()
             # Remove the row from the table
-            table_widget.removeRow(row_index)
+            self.table_widget.removeRow(row_index)
             QMessageBox.information(self, "Success", "Record deleted successfully.")
         else:
             QMessageBox.warning(self, "Warning", "Record not found.")
-
-
-    def populate_table(self, table_widget):
-        table_headers = ["street_name", "house", "building_body", "latitude", "longitude", "year_construction",
-                "number_floors", "number_entrances", "number_buildings", "number_living_quarters",
-                "title", "type_construction_name", "basic_project_name", "appointment_name",
-                "seismic_resistance_min", "seismic_resistance_max", "zone_SMZ_min", "zone_SMZ_max",
-                "priming", "load_bearing_walls_name", "basement_area", "building_roof_name",
-                "building_floor_name", "facade_name", "foundation_name", "azimuth", "cadastral_number",
-                "cadastral_cost", "year_overhaul", "accident_rate", "management_company_name",
-                "Land_area", "notes", "author", "actions"]
-
-        # Fetch data from the database with eager loading of related attributes
-        session = db_session()
-        data = session.query(BuildingDescription).options(
-            joinedload(BuildingDescription.street),
-            joinedload(BuildingDescription.type_construction),
-            joinedload(BuildingDescription.basic_project),
-            joinedload(BuildingDescription.appointment),
-            joinedload(BuildingDescription.load_bearing_walls),
-            joinedload(BuildingDescription.building_roof),
-            joinedload(BuildingDescription.building_floor),
-            joinedload(BuildingDescription.facade),
-            joinedload(BuildingDescription.foundation),
-            joinedload(BuildingDescription.management_company)
-        ).all()
-
-        # Populate the table with data
-        for row_index, row_data in enumerate(data):
-            table_widget.insertRow(row_index)
-            for col_index, header in enumerate(table_headers):
-                cell_value = ""
-                if header == "actions":
-                    # Create a delete button for each row
-                    delete_button = QPushButton("Delete")
-                    delete_button.clicked.connect(lambda _, r=row_data, tw=table_widget: self.delete_record(r, tw))
-
-                    table_widget.setCellWidget(row_index, col_index, delete_button)
-                elif hasattr(row_data, header):
-                    # Check if the attribute exists directly in BuildingDescription
-                    cell_value = getattr(row_data, header)
-                elif hasattr(row_data, header + "_name"):
-                    # Check if the attribute exists with "_name" suffix (indicating the name of the related object)
-                    cell_value = getattr(row_data, header + "_name")
-                else:
-                    # Handle the case where the attribute does not exist directly or as a related object's name
-                    # Assume it's a foreign key and retrieve the related object's name
-                    related_model_name = header.replace("_name", "")
-                    related_instance = getattr(row_data, related_model_name, None)
-                    if related_instance:
-                        # Check if the attribute exists in the related model
-                        cell_value = getattr(related_instance, related_model_name + "_name", "")
-                    table_widget.setItem(row_index, col_index, QTableWidgetItem(str(cell_value)))
-
-    def update_record(self, table_widget):
-        # Fetch selected record's data
-        selected_rows = table_widget.selectionModel().selectedRows()
-        if not selected_rows:
-            QMessageBox.warning(self, "Warning", "Please select a record to update.")
-            return
-
-        row_index = selected_rows[0].row()
-        record_id = int(table_widget.item(row_index, 0).text())
-
-        session = db_session()
-        record = session.query(BuildingDescription).get(record_id)
-        if not record:
-            QMessageBox.warning(self, "Warning", "Record not found.")
-            return
-
-        # Populate dialog fields with existing data
-        for label_text, _, related_model in self.labels:
-            line_edit = self.line_edits[label_text]
-            if label_text.startswith("ID_") and related_model:
-                # If it's a foreign key, load the name instead of the ID
-                related_instance = getattr(record, label_text[3:].lower())
-                if related_instance:
-                    line_edit.setText(getattr(related_instance, label_text[3:].lower() + "_name", ""))
-            else:
-                # Otherwise, load the data directly
-                value = getattr(record, label_text, None)
-                if value is not None:
-                    line_edit.setText(str(value))
-                else:
-                    line_edit.clear()
-
-        # Open the dialog for editing
-        self.exec()
-
-        # Update the record with edited data
-        for label_text, _, related_model in self.labels:
-            line_edit = self.line_edits[label_text]
-            value = line_edit.text()
-            if label_text.startswith("ID_") and related_model:
-                # If it's a foreign key, convert the name to ID
-                name_value = value
-                if name_value:  # Check if value is not an empty string
-                    related_instance = session.query(related_model).filter_by(**{related_model.__tablename__ + "_name": name_value}).first()
-                    if related_instance:
-                        # Use the primary key attribute of the related object
-                        if label_text == "ID_type_construction":
-                            setattr(record, label_text, related_instance.ID_type_construction)  # Adjust with the correct attribute
-                        
-                        elif label_text == "ID_type_construction":
-                            setattr(record, label_text, related_instance.ID_type_construction)  # Adjust with the correct attribute
-                        elif label_text == "ID_basic_project":
-                            setattr(record, label_text, related_instance.ID_basic_project)  # Adjust with the correct attribute
-                        elif label_text == "ID_appointment":
-                            setattr(record, label_text, related_instance.ID_appointment)  # Adjust with the correct attribute
-                        elif label_text == "ID_load_bearing_walls":
-                            setattr(record, label_text, related_instance.ID_load_bearing_walls)  # Adjust with the correct attribute
-                        elif label_text == "ID_building_roof":
-                            setattr(record, label_text, related_instance.ID_building_roof)  # Adjust with the correct attribute
-                        # Add more conditions for other related models as needed
-                        elif label_text == "ID_building_floor":
-                            setattr(record, label_text, related_instance.ID_building_floor)  # Adjust with the correct attribute
-                        elif label_text == "ID_facade":
-                            setattr(record, label_text, related_instance.ID_facade)  # Adjust with the correct attribute
-                        elif label_text == "ID_management_company":
-                            setattr(record, label_text, related_instance.ID_management_company)  # Adjust with the correct attribute
-                else:
-                    setattr(record, label_text, None)  # Set to None if value is empty
-            elif value != '':  # Check if value is not an empty string
-                setattr(record, label_text, value)
-            else:
-                setattr(record, label_text, None)  # Set to None if value is empty
-
-        session.commit()
-        session.close()
-
-        # Optionally, refresh the table or perform any other necessary actions
-        print("Record updated successfully!")
-
