@@ -48,39 +48,75 @@ class UpdateRecordDialog(QDialog):
 
         for idx, (label_text, value) in enumerate(self.record_data.items()):
             label = QLabel(label_text.replace('_', ' '))  # Replacing underscores with spaces for better readability
-            line_edit = QLineEdit(str(value))
-            
-            # Add validator based on data type
-            if label_text == "house" or label_text == "building_body" or label_text == "cadastral_number" or label_text == "year_construction" or label_text == "number_floors" or label_text == "number_entrances" or label_text == "number_buildings" or label_text == "number_living_quarters" or label_text == "cadastral_cost" or label_text == "year_overhaul" or label_text == "Land_area":
-                line_edit.setValidator(QIntValidator())
-            elif label_text == "latitude" or label_text == "longitude" or label_text == "seismic_resistance_min" or label_text == "seismic_resistance_max" or label_text == "zone_SMZ_min" or label_text == "zone_SMZ_max" or label_text == "basement_area":
-                line_edit.setValidator(QDoubleValidator())
-            
-            # Add QCompleter if needed
-            if label_text == "ID_street" or label_text == "title" or label_text == "ID_type_construction" or label_text == "ID_basic_project" or label_text == "ID_appointment" or label_text == "ID_load_bearing_walls" or label_text == "ID_building_roof" or label_text == "ID_building_floor" or label_text == "ID_facade" or label_text == "ID_foundation" or label_text == "ID_management_company":
-                completer = QCompleter()
-                if hasattr(value, 'query'):
-                    data = [str(item) for item in value.query.all()]
-                else:
-                    data = [value]
+            line_edit = QLineEdit()
 
-                model = QStandardItemModel()
-                for item in data:
-                    model.appendRow(QStandardItem(item))
+            # Add validator based on data type
+            validator = None
+            if label_text in ("house", "building_body", "cadastral_number", "year_construction", "number_floors",
+                            "number_entrances", "number_buildings", "number_living_quarters", "cadastral_cost",
+                            "year_overhaul", "Land_area"):
+                validator = QIntValidator()
+            elif label_text in ("latitude", "longitude", "seismic_resistance_min", "seismic_resistance_max",
+                                "zone_SMZ_min", "zone_SMZ_max", "basement_area"):
+                validator = QDoubleValidator()
+
+            if validator:
+                line_edit.setValidator(validator)
+
+            # Add QCompleter if needed
+            # Add QCompleter if needed
+            # Add QCompleter if needed
+            if label_text in ("street_name", "type_construction_name", "basic_project_name", "appointment_name",
+                                "load_bearing_walls_name", "building_roof_name", "building_floor_name", "facade_name",
+                                "foundation_name", "management_company_name"):
+                completer = QCompleter()
+                session = db_session()  # Assuming db_session is your SQLAlchemy session
+
+                # Fetch data using joinedloads or relationships
+                if label_text == "street_name":
+                    data_query = session.query(Street.street_name).distinct().all()
+                elif label_text == "type_construction_name":
+                    data_query = session.query(TypeConstruction.type_construction_name).distinct().all()
+                elif label_text == "basic_project_name":
+                    data_query = session.query(BasicProject.basic_project_name).distinct().all()
+                elif label_text == "appointment_name":
+                    data_query = session.query(Appointment.appointment_name).distinct().all()
+                elif label_text == "load_bearing_walls_name":
+                    data_query = session.query(LoadBearingWalls.load_bearing_walls_name).distinct().all()
+                elif label_text == "building_roof_name":
+                    data_query = session.query(BuildingRoof.building_roof_name).distinct().all()
+                elif label_text == "building_floor_name":
+                    data_query = session.query(BuildingFloor.building_floor_name).distinct().all()
+                elif label_text == "facade_name":
+                    data_query = session.query(Facade.facade_name).distinct().all()
+                elif label_text == "foundation_name":
+                    data_query = session.query(Foundation.foundation_name).distinct().all()
+                elif label_text == "management_company_name":
+                    data_query = session.query(ManagementCompany.management_company_name).distinct().all()
+
+
+                    
+                session.close()
+
+                data = [str(item[0]) for item in data_query]  # Extracting the attribute value from the query result
+                model = QStringListModel(data)
                 completer.setModel(model)
                 line_edit.setCompleter(completer)
+
+
+
+            # Prefill the line edit with existing data
+            if value is not None:
+                line_edit.setText(str(value))
 
             grid_layout.addWidget(label, idx // 2, idx % 2 * 2)  # Add the label and line edit to the grid
             grid_layout.addWidget(line_edit, idx // 2, idx % 2 * 2 + 1)
             self.line_edits[label_text] = line_edit  # Store line edit in the dictionary
 
-            # If line edit is empty, set it to an empty string instead of "None"
-            if not value:
-                line_edit.setText("")
-
         save_button = QPushButton("Save")
         save_button.clicked.connect(self.update_record)
         layout.addWidget(save_button)
+
 
     def update_record(self):
         # Get updated data from the form fields
@@ -96,7 +132,7 @@ class UpdateRecordDialog(QDialog):
 
         # Update the record in the database
         session = db_session()
-        record_id = self.record_data.get("ID_building")  
+        record_id = self.record_data.get("ID_building")
         record = session.query(BuildingDescription).filter_by(ID_building=record_id).first()
         if record:
             for key, value in updated_data.items():
