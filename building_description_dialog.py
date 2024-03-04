@@ -39,106 +39,108 @@ class UpdateRecordDialog(QDialog):
         self.initUI()
 
     def initUI(self):
-        layout = QVBoxLayout()
-        self.setLayout(layout)
-        self.line_edits = {}  # Initialize a dictionary to store line edits
-        self.labels = [  # Store labels and their respective data types
-            ("ID_street", "VARCHAR(150)", Street), ("house", "int", None), ("building_body", "int", None),
-            ("latitude", "numeric", None), ("longitude", "numeric", None), ("year_construction", "int", None),
-            ("number_floors", "int", None), ("number_entrances", "int", None), ("number_buildings", "int", None),
-            ("number_living_quarters", "int", None), ("title", "VARCHAR(150)", None),
-            ("ID_type_construction", "VARCHAR(150)", TypeConstruction), ("ID_basic_project", "VARCHAR(150)", BasicProject),
-            ("ID_appointment", "VARCHAR(150)", Appointment), ("seismic_resistance_min", "numeric", None),
-            ("seismic_resistance_max", "numeric", None), ("zone_SMZ_min", "numeric", None),
-            ("zone_SMZ_max", "numeric", None), ("priming", "VARCHAR(150)", None),
-            ("ID_load_bearing_walls", "VARCHAR(150)", LoadBearingWalls), ("basement_area", "numeric", None),
-            ("ID_building_roof", "VARCHAR(150)", BuildingRoof), ("ID_building_floor", "VARCHAR(150)", BuildingFloor),
-            ("ID_facade", "VARCHAR(150)", Facade), ("ID_foundation", "VARCHAR(150)", Foundation),
-            ("azimuth", "VARCHAR(150)", None), ("cadastral_number", "int", None),
-            ("cadastral_cost", "numeric", None), ("year_overhaul", "int", None),
-            ("accident_rate", "VARCHAR(150)", None), ("ID_management_company", "VARCHAR(150)", ManagementCompany),
-            ("Land_area", "numeric", None), ("notes", "VARCHAR(150)", None),
-            ("author", "VARCHAR(150)", None)
-        ]
-        grid_layout = QGridLayout()
-        layout.addLayout(grid_layout)
+            layout = QVBoxLayout()
+            self.setLayout(layout)
+            self.line_edits = {}  # Initialize a dictionary to store line edits
+            self.labels = [  # Store labels and their respective data types
+                ("ID_street", "VARCHAR(150)", Street), ("house", "int", None), ("building_body", "int", None),
+                ("latitude", "numeric", None), ("longitude", "numeric", None), ("year_construction", "int", None),
+                ("number_floors", "int", None), ("number_entrances", "int", None), ("number_buildings", "int", None),
+                ("number_living_quarters", "int", None), ("title", "VARCHAR(150)", None),
+                ("ID_type_construction", "VARCHAR(150)", TypeConstruction), ("ID_basic_project", "VARCHAR(150)", BasicProject),
+                ("ID_appointment", "VARCHAR(150)", Appointment), ("seismic_resistance_min", "numeric", None),
+                ("seismic_resistance_max", "numeric", None), ("zone_SMZ_min", "numeric", None),
+                ("zone_SMZ_max", "numeric", None), ("priming", "VARCHAR(150)", None),
+                ("ID_load_bearing_walls", "VARCHAR(150)", LoadBearingWalls), ("basement_area", "numeric", None),
+                ("ID_building_roof", "VARCHAR(150)", BuildingRoof), ("ID_building_floor", "VARCHAR(150)", BuildingFloor),
+                ("ID_facade", "VARCHAR(150)", Facade), ("ID_foundation", "VARCHAR(150)", Foundation),
+                ("azimuth", "VARCHAR(150)", None), ("cadastral_number", "int", None),
+                ("cadastral_cost", "numeric", None), ("year_overhaul", "int", None),
+                ("accident_rate", "VARCHAR(150)", None), ("ID_management_company", "VARCHAR(150)", ManagementCompany),
+                ("Land_area", "numeric", None), ("notes", "VARCHAR(150)", None),
+                ("author", "VARCHAR(150)", None)
+            ]
+            grid_layout = QGridLayout()
+            layout.addLayout(grid_layout)
 
-        # Include 'street_name' in the required fields
-        required_fields = ["street_name"]
+            # Include 'street_name' in the required fields
+            required_fields = ["street_name"]
 
-        for idx, (label_text, value) in enumerate(self.record_data.items()):
-            if label_text == "ID_street":
-                label_text = "street_name"  # Replace ID_street with street_name
-            label = QLabel(label_text.replace('_', ' '))  # Replacing underscores with spaces for better readability
-            line_edit = QLineEdit()
+            num_columns = 2  # Number of columns in the grid layout
+            for idx, (label_text, value) in enumerate(self.record_data.items()):
+                if label_text == "ID_street":
+                    label_text = "street_name"  # Replace ID_street with street_name
+                label = QLabel(label_text.replace('_', ' '))  # Replacing underscores with spaces for better readability
+                line_edit = QLineEdit()
 
-            # Add validator based on data type
-            validator = None
-            if label_text in ("house", "building_body", "cadastral_number", "year_construction", "number_floors",
-                            "number_entrances", "number_buildings", "number_living_quarters", "cadastral_cost",
-                            "year_overhaul", "Land_area"):
-                validator = QIntValidator()
-            elif label_text in ("latitude", "longitude", "seismic_resistance_min", "seismic_resistance_max",
-                                "zone_SMZ_min", "zone_SMZ_max", "basement_area"):
-                validator = QDoubleValidator()
+                # Add validator based on data type
+                validator = None
+                if label_text in ("house", "building_body", "cadastral_number", "year_construction", "number_floors",
+                                "number_entrances", "number_buildings", "number_living_quarters", "cadastral_cost",
+                                "year_overhaul", "Land_area"):
+                    validator = QIntValidator()
+                elif label_text in ("latitude", "longitude", "seismic_resistance_min", "seismic_resistance_max",
+                                    "zone_SMZ_min", "zone_SMZ_max", "basement_area"):
+                    validator = QDoubleValidator()
 
-            if validator:
-                line_edit.setValidator(validator)
+                if validator:
+                    line_edit.setValidator(validator)
 
-            # Add QCompleter if needed
-            if label_text in ("street_name", "type_construction_name", "basic_project_name", "appointment_name",
-                                "load_bearing_walls_name", "building_roof_name", "building_floor_name", "facade_name",
-                                "foundation_name", "management_company_name"):
-                completer = QCompleter()
-                session = db_session()  # Assuming db_session is your SQLAlchemy session
+                # Add QCompleter if needed
+                if label_text in ("street_name", "type_construction_name", "basic_project_name", "appointment_name",
+                                    "load_bearing_walls_name", "building_roof_name", "building_floor_name", "facade_name",
+                                    "foundation_name", "management_company_name"):
+                    completer = QCompleter()
+                    session = db_session()  # Assuming db_session is your SQLAlchemy session
 
-                # Fetch data using joinedloads or relationships
-                if label_text == "street_name":
-                    data_query = session.query(Street.street_name).distinct().all()
-                elif label_text == "type_construction_name":
-                    data_query = session.query(TypeConstruction.type_construction_name).distinct().all()
-                elif label_text == "basic_project_name":
-                    data_query = session.query(BasicProject.basic_project_name).distinct().all()
-                elif label_text == "appointment_name":
-                    data_query = session.query(Appointment.appointment_name).distinct().all()
-                elif label_text == "load_bearing_walls_name":
-                    data_query = session.query(LoadBearingWalls.load_bearing_walls_name).distinct().all()
-                elif label_text == "building_roof_name":
-                    data_query = session.query(BuildingRoof.building_roof_name).distinct().all()
-                elif label_text == "building_floor_name":
-                    data_query = session.query(BuildingFloor.building_floor_name).distinct().all()
-                elif label_text == "facade_name":
-                    data_query = session.query(Facade.facade_name).distinct().all()
-                elif label_text == "foundation_name":
-                    data_query = session.query(Foundation.foundation_name).distinct().all()
-                elif label_text == "management_company_name":
-                    data_query = session.query(ManagementCompany.management_company_name).distinct().all()
+                    # Fetch data using joinedloads or relationships
+                    if label_text == "street_name":
+                        data_query = session.query(Street.street_name).distinct().all()
+                    elif label_text == "type_construction_name":
+                        data_query = session.query(TypeConstruction.type_construction_name).distinct().all()
+                    elif label_text == "basic_project_name":
+                        data_query = session.query(BasicProject.basic_project_name).distinct().all()
+                    elif label_text == "appointment_name":
+                        data_query = session.query(Appointment.appointment_name).distinct().all()
+                    elif label_text == "load_bearing_walls_name":
+                        data_query = session.query(LoadBearingWalls.load_bearing_walls_name).distinct().all()
+                    elif label_text == "building_roof_name":
+                        data_query = session.query(BuildingRoof.building_roof_name).distinct().all()
+                    elif label_text == "building_floor_name":
+                        data_query = session.query(BuildingFloor.building_floor_name).distinct().all()
+                    elif label_text == "facade_name":
+                        data_query = session.query(Facade.facade_name).distinct().all()
+                    elif label_text == "foundation_name":
+                        data_query = session.query(Foundation.foundation_name).distinct().all()
+                    elif label_text == "management_company_name":
+                        data_query = session.query(ManagementCompany.management_company_name).distinct().all()
 
-                session.close()
+                    session.close()
 
-                data = [str(getattr(item, label_text)) for item in data_query]
-                model = QStringListModel(data)
-                completer.setModel(model)
-                line_edit.setCompleter(completer)
+                    data = [str(getattr(item, label_text)) for item in data_query]
+                    model = QStringListModel(data)
+                    completer.setModel(model)
+                    line_edit.setCompleter(completer)
 
-            # Prefill the line edit with existing data
-            if value is not None:
-                line_edit.setText(str(value))
+                # Prefill the line edit with existing data
+                if value is not None:
+                    line_edit.setText(str(value))
 
-            grid_layout.addWidget(label, idx, 0)  # Add the label to the grid
-            grid_layout.addWidget(line_edit, idx, 1)  # Add the line edit to the grid
-            self.line_edits[label_text] = line_edit  # Store line edit in the dictionary
-
-
-        # Ensure 'street_name' is in self.line_edits, if not add an empty QLineEdit
-        if 'street_name' not in self.line_edits:
-            self.line_edits['street_name'] = QLineEdit()
-
-        save_button = QPushButton("Save")
-        save_button.clicked.connect(self.update_record)
-        layout.addWidget(save_button)
+                # Adjusting layout for two columns
+                row = idx // num_columns
+                col = idx % num_columns * 2
+                grid_layout.addWidget(label, row, col)  # Add the label to the grid
+                grid_layout.addWidget(line_edit, row, col + 1)  # Add the line edit to the grid
+                self.line_edits[label_text] = line_edit  # Store line edit in the dictionary
 
 
+            # Ensure 'street_name' is in self.line_edits, if not add an empty QLineEdit
+            if 'street_name' not in self.line_edits:
+                self.line_edits['street_name'] = QLineEdit()
+
+            save_button = QPushButton("Save")
+            save_button.clicked.connect(self.update_record)
+            layout.addWidget(save_button)
     def update_record(self):
         # Get updated data from the form fields
         updated_data = {}
