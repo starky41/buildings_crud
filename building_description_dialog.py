@@ -30,7 +30,7 @@ class SortableTableWidget(QTableWidget):
             self.sort_order = Qt.SortOrder.AscendingOrder
 
         # Sort the table by the clicked column
-        self.sortItems(logical_index, self.sort_order)
+        self.sortByColumn(logical_index, self.sort_order)
 class UpdateRecordDialog(QDialog):
     def __init__(self, record_data):
         super().__init__()
@@ -378,7 +378,7 @@ class MainDialog(QDialog):
         layout = QVBoxLayout()
         self.setLayout(layout)
 
-        self.table_widget = QTableWidget()
+        self.table_widget = SortableTableWidget()
         self.table_widget.setColumnCount(len(self.table_headers))
         self.table_widget.setHorizontalHeaderLabels(self.table_headers)
         layout.addWidget(self.table_widget)
