@@ -4,6 +4,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtGui import QIntValidator, QDoubleValidator
 from PyQt6.QtCore import QStringListModel, Qt
+from PyQt6.QtGui import QStandardItemModel, QStandardItem
 from sqlalchemy.orm import sessionmaker
 from models import Street, TypeConstruction, BasicProject, Appointment, LoadBearingWalls, \
     BuildingRoof, BuildingFloor, Facade, Foundation, ManagementCompany, BuildingDescription
@@ -30,7 +31,6 @@ class SortableTableWidget(QTableWidget):
 
         # Sort the table by the clicked column
         self.sortItems(logical_index, self.sort_order)
-
 class UpdateRecordDialog(QDialog):
     def __init__(self, record_data):
         super().__init__()
@@ -49,6 +49,27 @@ class UpdateRecordDialog(QDialog):
         for idx, (label_text, value) in enumerate(self.record_data.items()):
             label = QLabel(label_text.replace('_', ' '))  # Replacing underscores with spaces for better readability
             line_edit = QLineEdit(str(value))
+            
+            # Add validator based on data type
+            if label_text == "house" or label_text == "building_body" or label_text == "cadastral_number" or label_text == "year_construction" or label_text == "number_floors" or label_text == "number_entrances" or label_text == "number_buildings" or label_text == "number_living_quarters" or label_text == "cadastral_cost" or label_text == "year_overhaul" or label_text == "Land_area":
+                line_edit.setValidator(QIntValidator())
+            elif label_text == "latitude" or label_text == "longitude" or label_text == "seismic_resistance_min" or label_text == "seismic_resistance_max" or label_text == "zone_SMZ_min" or label_text == "zone_SMZ_max" or label_text == "basement_area":
+                line_edit.setValidator(QDoubleValidator())
+            
+            # Add QCompleter if needed
+            if label_text == "ID_street" or label_text == "title" or label_text == "ID_type_construction" or label_text == "ID_basic_project" or label_text == "ID_appointment" or label_text == "ID_load_bearing_walls" or label_text == "ID_building_roof" or label_text == "ID_building_floor" or label_text == "ID_facade" or label_text == "ID_foundation" or label_text == "ID_management_company":
+                completer = QCompleter()
+                if hasattr(value, 'query'):
+                    data = [str(item) for item in value.query.all()]
+                else:
+                    data = [value]
+
+                model = QStandardItemModel()
+                for item in data:
+                    model.appendRow(QStandardItem(item))
+                completer.setModel(model)
+                line_edit.setCompleter(completer)
+
             grid_layout.addWidget(label, idx // 2, idx % 2 * 2)  # Add the label and line edit to the grid
             grid_layout.addWidget(line_edit, idx // 2, idx % 2 * 2 + 1)
             self.line_edits[label_text] = line_edit  # Store line edit in the dictionary
@@ -86,6 +107,8 @@ class UpdateRecordDialog(QDialog):
         else:
             QMessageBox.warning(self, "Error", "Record not found.")
         session.close()
+
+
 
 
 
