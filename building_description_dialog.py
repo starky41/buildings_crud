@@ -42,11 +42,33 @@ class UpdateRecordDialog(QDialog):
         layout = QVBoxLayout()
         self.setLayout(layout)
         self.line_edits = {}  # Initialize a dictionary to store line edits
-
+        self.labels = [  # Store labels and their respective data types
+            ("ID_street", "VARCHAR(150)", Street), ("house", "int", None), ("building_body", "int", None),
+            ("latitude", "numeric", None), ("longitude", "numeric", None), ("year_construction", "int", None),
+            ("number_floors", "int", None), ("number_entrances", "int", None), ("number_buildings", "int", None),
+            ("number_living_quarters", "int", None), ("title", "VARCHAR(150)", None),
+            ("ID_type_construction", "VARCHAR(150)", TypeConstruction), ("ID_basic_project", "VARCHAR(150)", BasicProject),
+            ("ID_appointment", "VARCHAR(150)", Appointment), ("seismic_resistance_min", "numeric", None),
+            ("seismic_resistance_max", "numeric", None), ("zone_SMZ_min", "numeric", None),
+            ("zone_SMZ_max", "numeric", None), ("priming", "VARCHAR(150)", None),
+            ("ID_load_bearing_walls", "VARCHAR(150)", LoadBearingWalls), ("basement_area", "numeric", None),
+            ("ID_building_roof", "VARCHAR(150)", BuildingRoof), ("ID_building_floor", "VARCHAR(150)", BuildingFloor),
+            ("ID_facade", "VARCHAR(150)", Facade), ("ID_foundation", "VARCHAR(150)", Foundation),
+            ("azimuth", "VARCHAR(150)", None), ("cadastral_number", "int", None),
+            ("cadastral_cost", "numeric", None), ("year_overhaul", "int", None),
+            ("accident_rate", "VARCHAR(150)", None), ("ID_management_company", "VARCHAR(150)", ManagementCompany),
+            ("Land_area", "numeric", None), ("notes", "VARCHAR(150)", None),
+            ("author", "VARCHAR(150)", None)
+        ]
         grid_layout = QGridLayout()
         layout.addLayout(grid_layout)
 
+        # Include 'street_name' in the required fields
+        required_fields = ["street_name"]
+
         for idx, (label_text, value) in enumerate(self.record_data.items()):
+            if label_text == "ID_street":
+                label_text = "street_name"  # Replace ID_street with street_name
             label = QLabel(label_text.replace('_', ' '))  # Replacing underscores with spaces for better readability
             line_edit = QLineEdit()
 
@@ -63,8 +85,6 @@ class UpdateRecordDialog(QDialog):
             if validator:
                 line_edit.setValidator(validator)
 
-            # Add QCompleter if needed
-            # Add QCompleter if needed
             # Add QCompleter if needed
             if label_text in ("street_name", "type_construction_name", "basic_project_name", "appointment_name",
                                 "load_bearing_walls_name", "building_roof_name", "building_floor_name", "facade_name",
@@ -94,24 +114,25 @@ class UpdateRecordDialog(QDialog):
                 elif label_text == "management_company_name":
                     data_query = session.query(ManagementCompany.management_company_name).distinct().all()
 
-
-                    
                 session.close()
 
-                data = [str(item[0]) for item in data_query]  # Extracting the attribute value from the query result
+                data = [str(getattr(item, label_text)) for item in data_query]
                 model = QStringListModel(data)
                 completer.setModel(model)
                 line_edit.setCompleter(completer)
-
-
 
             # Prefill the line edit with existing data
             if value is not None:
                 line_edit.setText(str(value))
 
-            grid_layout.addWidget(label, idx // 2, idx % 2 * 2)  # Add the label and line edit to the grid
-            grid_layout.addWidget(line_edit, idx // 2, idx % 2 * 2 + 1)
+            grid_layout.addWidget(label, idx, 0)  # Add the label to the grid
+            grid_layout.addWidget(line_edit, idx, 1)  # Add the line edit to the grid
             self.line_edits[label_text] = line_edit  # Store line edit in the dictionary
+
+
+        # Ensure 'street_name' is in self.line_edits, if not add an empty QLineEdit
+        if 'street_name' not in self.line_edits:
+            self.line_edits['street_name'] = QLineEdit()
 
         save_button = QPushButton("Save")
         save_button.clicked.connect(self.update_record)
@@ -121,29 +142,67 @@ class UpdateRecordDialog(QDialog):
     def update_record(self):
         # Get updated data from the form fields
         updated_data = {}
+        required_fields = ["street_name", "house"]  # Specify the required fields
+
+        # Check if the required fields are empty
+        for field in required_fields:
+            if not self.line_edits.get(field):
+                print(f"DEBUG: Field '{field}' not found in line edits.")
+                QMessageBox.warning(self, "Warning", f"Please enter a value for {field}.")
+                return
 
         for label_text, line_edit in self.line_edits.items():
             value = line_edit.text()
-            # Convert empty strings to None
-            if value == '':
-                updated_data[label_text] = None
-            else:
+            if value:  # Check if the value is not empty
                 updated_data[label_text] = value
+
+        # Convert name values to ID values for applicable fields
+        for label_text, _, related_model in self.labels:
+            if label_text.startswith("ID_") and related_model:
+                session = db_session()
+                name_value = updated_data.get(label_text.replace("ID_", "") + "_name", "")
+                if name_value:
+                    # Query the related table to find the ID corresponding to the name value
+                    related_instance = session.query(related_model).filter_by(**{related_model.__tablename__ + "_name": name_value}).first()
+                    session.close()
+                    if related_instance:
+                        updated_data[label_text] = getattr(related_instance, "ID_" + related_model.__tablename__)
+                    else:
+                        QMessageBox.warning(self, "Warning", f"No matching record found for {name_value} in {related_model.__tablename__}.")
+                        return
+
+        print(f"\n\nUpdated data: {updated_data}\n\n")  # Debug print to check the updated data
 
         # Update the record in the database
         session = db_session()
         record_id = self.record_data.get("ID_building")
         record = session.query(BuildingDescription).filter_by(ID_building=record_id).first()
+
         if record:
-            for key, value in updated_data.items():
-                setattr(record, key, value)
-            session.commit()
-            QMessageBox.information(self, "Success", "Record updated successfully.")
-            self.close()
+            print(f"\n\nExisting record: {record.__dict__}\n\n")  # Debug print to check the existing record before update
+            try:
+                for key, value in updated_data.items():
+                    if hasattr(record, key):
+                        setattr(record, key, value)
+                    else:
+                        # If the key doesn't exist in the record, skip it
+                        print(f"Warning: Key '{key}' not found in record.")
+            except Exception as e:
+                session.rollback()
+                QMessageBox.warning(self, "Error", f"Failed to update record: {str(e)}")
+                return
+
+            try:
+                session.commit()
+                QMessageBox.information(self, "Success", "Record updated successfully.")
+                self.close()
+            except Exception as e:
+                session.rollback()
+                QMessageBox.warning(self, "Error", f"Failed to update record: {str(e)}")
         else:
             QMessageBox.warning(self, "Error", "Record not found.")
-        session.close()
 
+        session.close()
 
 
 
