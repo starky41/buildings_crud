@@ -382,6 +382,8 @@ class MainDialog(QDialog):
         self.table_widget.setColumnCount(len(self.table_headers))
         self.table_widget.setHorizontalHeaderLabels(self.table_headers)
         layout.addWidget(self.table_widget)
+        self.resize(1280, 720)  
+        
 
         # Add buttons for Delete, Update, and Add Record
         button_layout = QHBoxLayout()
