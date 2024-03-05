@@ -1,8 +1,11 @@
-from models import *
-from database import init_db, db_session
-from data_access_layer import DataAccessLayer
+from database.models import *
+from database.database import init_db, db_session
+from database.data_access_layer import DataAccessLayer
 from sqlalchemy.exc import IntegrityError
 def populate_database():
+    """
+    Populate the database with data for 10 tables using the provided data and DataAccessLayer instance.
+    """
     # Initialize the DataAccessLayer instance
     dal = DataAccessLayer(db_session)
 

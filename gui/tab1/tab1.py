@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import QWidget, QLineEdit, QLabel, QVBoxLayout, QHBoxLayout, QPushButton, QCompleter, QMessageBox, QDialog
-from building_description_dialog import MainDialog
-from models import Street
-from database import db_session
+from gui.tab1.building_description_dialog import MainDialog
+from database.models import Street
+from database.database import db_session
 
 class Tab1(QWidget):
     def __init__(self):

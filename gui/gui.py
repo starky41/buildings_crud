@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QTabWidget
-from tab2 import Tab2
-from tab1 import Tab1
+from gui.tab2.tab2 import Tab2
+from gui.tab1.tab1 import Tab1
 
 class MyApp(QMainWindow):
     def __init__(self):

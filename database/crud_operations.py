@@ -1,9 +1,9 @@
 from sqlalchemy import inspect
 from sqlalchemy.exc import IntegrityError
 from PyQt6.QtWidgets import QMessageBox, QTableWidgetItem, QPushButton, QDialog, QLabel, QVBoxLayout, QLineEdit
-from data_access_layer import DataAccessLayer
-from database import engine, db_session
-from get_model_class import get_model_class
+from database.data_access_layer import DataAccessLayer
+from database.database import engine, db_session
+from database.get_model_class import get_model_class
 class CrudOperations:
 
     def createItem(self, model_class_name, db_session, DataAccessLayer, refreshTable, clearLineEdits, table_widget, addUpdateButton, layout):

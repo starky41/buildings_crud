@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Numeric, ForeignKey, Date
 from sqlalchemy.orm import relationship
-from database import Base
+from database.database import Base
 
 class Street(Base):
     __tablename__ = 'street'

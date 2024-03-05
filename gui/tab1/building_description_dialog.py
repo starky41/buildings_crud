@@ -6,9 +6,9 @@ from PyQt6.QtGui import QIntValidator, QDoubleValidator
 from PyQt6.QtCore import QStringListModel, Qt
 from PyQt6.QtGui import QStandardItemModel, QStandardItem
 from sqlalchemy.orm import sessionmaker
-from models import Street, TypeConstruction, BasicProject, Appointment, LoadBearingWalls, \
+from database.models import Street, TypeConstruction, BasicProject, Appointment, LoadBearingWalls, \
     BuildingRoof, BuildingFloor, Facade, Foundation, ManagementCompany, BuildingDescription
-from database import db_session
+from database.database import db_session
 from constants import field_labels
 from sqlalchemy.orm import joinedload
 

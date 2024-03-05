@@ -1,11 +1,11 @@
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QDialog, QHBoxLayout, QInputDialog, QLineEdit, QPushButton, QLabel, QTableWidget, QTableWidgetItem, QMessageBox, QHeaderView
-from models import Street, TypeConstruction, BasicProject, Appointment, LoadBearingWalls, BuildingRoof, BuildingFloor, Facade, BuildingDescription, WearRate
-from database import engine, db_session
-from data_access_layer import DataAccessLayer
+from database.models import Street, TypeConstruction, BasicProject, Appointment, LoadBearingWalls, BuildingRoof, BuildingFloor, Facade, BuildingDescription, WearRate
+from database.database import engine, db_session
+from database.data_access_layer import DataAccessLayer
 from sqlalchemy.exc import IntegrityError
 from PyQt6.QtGui import QIcon
-from get_model_class import get_model_class
-from crud_operations import CrudOperations
+from database.get_model_class import get_model_class
+from database.crud_operations import CrudOperations
 
 class CrudWindow(QWidget):
     def __init__(self, model_class_name):

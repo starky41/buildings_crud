@@ -13,7 +13,7 @@ Base = declarative_base()
 Base.query = db_session.query_property()
 
 def init_db():
-    from populate_database import populate_database
+    from database.populate_database import populate_database
     # Import all of the models
     # This will associate the models with the Base metadata
     

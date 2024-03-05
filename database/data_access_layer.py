@@ -1,4 +1,4 @@
-from database import db_session
+from .database import db_session
 
 class DataAccessLayer:
     def __init__(self, session):

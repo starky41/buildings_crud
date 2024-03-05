@@ -1,8 +1,8 @@
 from PyQt6.QtWidgets import QWidget, QGridLayout, QPushButton
-from crud import CrudWindow  # Make sure to import the CrudWindow class
+from gui.tab2.crud import CrudWindow  # Make sure to import the CrudWindow class
 from PyQt6.QtWidgets import QWidget, QGridLayout, QPushButton
-from crud import CrudWindow  # Import the CrudWindow class
-from get_model_class import get_model_class
+from gui.tab2.crud import CrudWindow  # Import the CrudWindow class
+from database.get_model_class import get_model_class
 
 class Tab2(QWidget):
     def __init__(self, parent=None):
@@ -28,7 +28,6 @@ class Tab2(QWidget):
         pass  # No need for this method as it doesn't add any additional functionality
 
     def openCrudWindow(self, name):
-
         model_class = get_model_class(name)
         if model_class:
             crud_window = CrudWindow(name)  # Pass the model class name as a string

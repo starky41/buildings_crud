@@ -1,6 +1,6 @@
-from database import init_db, db_session
-from data_access_layer import DataAccessLayer
-from gui import MyApp
+from database.database import init_db, db_session
+from database.data_access_layer import DataAccessLayer
+from gui.gui import MyApp
 from PyQt6.QtWidgets import QApplication
 # Initialize the database (create tables if they don't exist)
 init_db()
@@ -9,7 +9,7 @@ init_db()
 dal = DataAccessLayer(db_session)
 
 def main():
-    from models import Appointment
+    from database.models import Appointment
     
     # Usage:
     dal = DataAccessLayer(db_session)
