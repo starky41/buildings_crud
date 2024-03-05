@@ -11,6 +11,8 @@ class DataAccessLayer:
         except Exception as e:
             self.session.rollback()
             raise e
+        finally:
+            self.session.close()
 
     def read(self, model, **kwargs):
         try:
@@ -21,6 +23,8 @@ class DataAccessLayer:
         except Exception as e:
             self.session.rollback()
             raise e
+        finally:
+            self.session.close()
 
     def update(self, model, identifier, **kwargs):
         try:
@@ -35,7 +39,8 @@ class DataAccessLayer:
         except Exception as e:
             self.session.rollback()
             raise e
-
+        finally:
+            self.session.close()
 
     def delete(self, model, **identifier):
         try:
@@ -47,4 +52,3 @@ class DataAccessLayer:
             raise e
         finally:
             self.session.close()
-
