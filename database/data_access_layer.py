@@ -45,5 +45,6 @@ class DataAccessLayer:
         except Exception as e:
             self.session.rollback()
             raise e
-
+        finally:
+            self.session.close()
 

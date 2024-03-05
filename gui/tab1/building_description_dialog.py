@@ -12,7 +12,7 @@ from database.database import db_session
 from constants import field_labels
 from sqlalchemy.orm import joinedload
 from constants import LABELS
-
+from database.data_access_layer import DataAccessLayer
 class SortableTableWidget(QTableWidget):
     def __init__(self):
         super().__init__()
@@ -339,7 +339,7 @@ class MainDialog(QDialog):
     def initUI(self):
         layout = QVBoxLayout()
         self.setLayout(layout)
-
+        self.dal = DataAccessLayer(db_session)
         self.table_widget = SortableTableWidget()
         self.table_widget.setColumnCount(len(self.table_headers))
         self.table_widget.setHorizontalHeaderLabels(self.table_headers)
@@ -436,6 +436,7 @@ class MainDialog(QDialog):
 
         # Refresh the table after adding a record
         self.populate_table()
+
     def delete_selected_record(self):
         selected_rows = self.table_widget.selectionModel().selectedRows()
         if not selected_rows:
@@ -451,14 +452,10 @@ class MainDialog(QDialog):
             QMessageBox.warning(self, "Error", "Invalid record ID.")
             return
 
-        session = db_session()
-        record = session.query(BuildingDescription).get(record_id)
-        if record:
-            session.delete(record)
-            session.commit()
-            session.close()
+        try:
+            self.dal.delete(BuildingDescription, ID_building=record_id)
             # Remove the row from the table
             self.table_widget.removeRow(row_index)
             QMessageBox.information(self, "Success", "Record deleted successfully.")
-        else:
-            QMessageBox.warning(self, "Warning", "Record not found.")
+        except Exception as e:
+            QMessageBox.warning(self, "Error", f"Failed to delete record: {str(e)}")
