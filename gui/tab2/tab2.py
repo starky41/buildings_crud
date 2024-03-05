@@ -14,7 +14,7 @@ class Tab2(QWidget):
         self.tab2Layout.setSpacing(10)
 
         buttonNames = [
-            "Street", "TypeConstruction", "BasicProject", "Appointment", "LoadBearingWalls", "BuildingRoof", "BuildingFloor", "Facade"  # Add other model names here
+            "Street", "TypeConstruction", "BasicProject", "Appointment", "LoadBearingWalls", "BuildingRoof", "BuildingFloor", "Facade", "WearRate"  # Add other model names here
         ]
 
         for index, name in enumerate(buttonNames):
