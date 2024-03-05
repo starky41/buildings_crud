@@ -177,6 +177,8 @@ class AddRecordDialog(QDialog):
         super().__init__()
         self.setWindowTitle("Add Record")
         self.initUI()
+        self.substituted_values = {}
+        self.dal = DataAccessLayer(db_session())
         self.record_data = record_data 
         # If record_data is provided, pre-fill the fields with its values
         if record_data:
@@ -270,14 +272,12 @@ class AddRecordDialog(QDialog):
         # Convert name values to ID values
         for label_text, data_type, related_model in self.labels:
             if label_text.startswith("ID_") and related_model:
-                session = db_session()
                 name_value = data.get(label_text, "")  # Get the value or empty string if not present
                 if name_value:
                     # Query the related table to find the ID corresponding to the name value
-                    related_instance = session.query(related_model).filter_by(**{related_model.__tablename__ + "_name": name_value}).first()
-                    session.close()
+                    related_instance = self.dal.read(related_model, **{related_model.__tablename__ + "_name": name_value})
                     if related_instance:
-                        data[label_text] = getattr(related_instance, "ID_" + related_model.__tablename__)
+                        data[label_text] = getattr(related_instance[0], "ID_" + related_model.__tablename__)
                     else:
                         QMessageBox.warning(self, "Warning", f"No matching record found for {name_value} in {related_model.__tablename__}.")
                         return
@@ -286,14 +286,13 @@ class AddRecordDialog(QDialog):
         new_building = BuildingDescription(**data)
 
         # Add the new record to the database
-        session = db_session()
-        session.add(new_building)
-        session.commit()
-        session.close()
-
-        QMessageBox.information(self, "Success", "Record added successfully.")
-        self.clear_fields()
-        self.close()
+        try:
+            self.dal.create(new_building)
+            QMessageBox.information(self, "Success", "Record added successfully.")
+            self.clear_fields()
+            self.close()
+        except Exception as e:
+            QMessageBox.warning(self, "Error", f"Failed to add record: {str(e)}")
 
     def clear_fields(self):
         for line_edit in self.line_edits.values():
