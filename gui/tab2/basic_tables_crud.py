@@ -1,12 +1,10 @@
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QDialog, QHBoxLayout, QInputDialog, QLineEdit, QPushButton, QLabel, QTableWidget, QTableWidgetItem, QMessageBox, QHeaderView
-from database.models import Street, TypeConstruction, BasicProject, Appointment, LoadBearingWalls, BuildingRoof, BuildingFloor, Facade, BuildingDescription, WearRate
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLineEdit, QPushButton, QLabel, QHeaderView
 from database.database import engine, db_session
 from database.data_access_layer import DataAccessLayer
-from sqlalchemy.exc import IntegrityError
 from PyQt6.QtGui import QIcon
 from database.get_model_class import get_model_class
 from database.crud_operations import CrudOperations
-
+from ..widgets.sortable_table_widget import SortableTableWidget
 class CrudWindow(QWidget):
     def __init__(self, model_class_name):
         super().__init__()
@@ -38,7 +36,7 @@ class CrudWindow(QWidget):
             self.layout.addWidget(save_button)
         
             # Create a QTableWidget to display the database table data
-            self.table_widget = QTableWidget()
+            self.table_widget = SortableTableWidget()
             self.table_widget.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
             self.layout.addWidget(self.table_widget)
 
