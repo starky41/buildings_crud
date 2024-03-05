@@ -1,7 +1,5 @@
 from PyQt6.QtWidgets import QWidget, QGridLayout, QPushButton
 from gui.tab2.crud import CrudWindow  # Make sure to import the CrudWindow class
-from PyQt6.QtWidgets import QWidget, QGridLayout, QPushButton
-from gui.tab2.crud import CrudWindow  # Import the CrudWindow class
 from database.get_model_class import get_model_class
 
 class Tab2(QWidget):
