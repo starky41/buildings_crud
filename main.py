@@ -9,26 +9,7 @@ init_db()
 dal = DataAccessLayer(db_session)
 
 def main():
-    from database.models import Appointment
-    
-    # Usage:
-    dal = DataAccessLayer(db_session)
-    
-
-    # Create operation example
-    # new_appointment = Appointment(appointment_name='test_appointment1')
-    # dal.create(new_appointment)
-
-    # Read operation example
-    # appointments = dal.read(Appointment)
-    # specific_appointment = dal.read(Appointment, ID_appointment=2)
-
-    # # Update operation example
-    # dal.update(Appointment, {'ID_building': 1}, house=11)
-
-    # # Delete operation example
-    # dal.delete(Appointment, ID_building=1)
-
+    print("")
 if __name__ == "__main__":
     
     main()
