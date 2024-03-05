@@ -93,27 +93,21 @@ class UpdateRecordDialog(QDialog):
                     completer = QCompleter()
                     session = db_session()  # Assuming db_session is your SQLAlchemy session
 
-                    # Fetch data using joinedloads or relationships
-                    if label_text == "street_name":
-                        data_query = session.query(Street.street_name).distinct().all()
-                    elif label_text == "type_construction_name":
-                        data_query = session.query(TypeConstruction.type_construction_name).distinct().all()
-                    elif label_text == "basic_project_name":
-                        data_query = session.query(BasicProject.basic_project_name).distinct().all()
-                    elif label_text == "appointment_name":
-                        data_query = session.query(Appointment.appointment_name).distinct().all()
-                    elif label_text == "load_bearing_walls_name":
-                        data_query = session.query(LoadBearingWalls.load_bearing_walls_name).distinct().all()
-                    elif label_text == "building_roof_name":
-                        data_query = session.query(BuildingRoof.building_roof_name).distinct().all()
-                    elif label_text == "building_floor_name":
-                        data_query = session.query(BuildingFloor.building_floor_name).distinct().all()
-                    elif label_text == "facade_name":
-                        data_query = session.query(Facade.facade_name).distinct().all()
-                    elif label_text == "foundation_name":
-                        data_query = session.query(Foundation.foundation_name).distinct().all()
-                    elif label_text == "management_company_name":
-                        data_query = session.query(ManagementCompany.management_company_name).distinct().all()
+                    query_classes = {
+                        "street_name": Street.street_name,
+                        "type_construction_name": TypeConstruction.type_construction_name,
+                        "basic_project_name": BasicProject.basic_project_name,
+                        "appointment_name": Appointment.appointment_name,
+                        "load_bearing_walls_name": LoadBearingWalls.load_bearing_walls_name,
+                        "building_roof_name": BuildingRoof.building_roof_name,
+                        "building_floor_name": BuildingFloor.building_floor_name,
+                        "facade_name": Facade.facade_name,
+                        "foundation_name": Foundation.foundation_name,
+                        "management_company_name": ManagementCompany.management_company_name
+                    }
+
+                    if label_text in query_classes:
+                        data_query = session.query(query_classes[label_text]).distinct().all()
 
                     session.close()
 

@@ -60,7 +60,7 @@ class Tab1(QWidget):
         section1ButtonsLayout = QHBoxLayout()
         findButton = QPushButton("Найти")
         findButton.clicked.connect(self.showFindResults)
-        addButton = QPushButton("Добавить")
+        addButton = QPushButton("Таблица")
         addButton.clicked.connect(self.addFunction)
         section1ButtonsLayout.addWidget(findButton)
         section1ButtonsLayout.addWidget(addButton)

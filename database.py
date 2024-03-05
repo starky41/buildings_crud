@@ -21,10 +21,11 @@ def init_db():
     # Base.metadata.create_all(bind=engine)
 
     # for testing purposes only (delete tables and records)
-    # Base.metadata.drop_all(engine)
+    Base.metadata.drop_all(engine)
 
 
     # Create all tables in the engine. This is equivalent to "Create Table" statements in raw SQL.
     Base.metadata.create_all(engine)
+    populate_database()
   
     
