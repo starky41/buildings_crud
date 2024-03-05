@@ -1,10 +1,8 @@
 from PyQt6.QtWidgets import QWidget, QGridLayout, QPushButton
 from crud import CrudWindow  # Make sure to import the CrudWindow class
-from models import Street, TypeConstruction
 from PyQt6.QtWidgets import QWidget, QGridLayout, QPushButton
 from crud import CrudWindow  # Import the CrudWindow class
-from models import Street, TypeConstruction, BasicProject, Appointment, LoadBearingWalls, BuildingRoof, BuildingFloor, Facade, BuildingDescription, WearRate
-
+from get_model_class import get_model_class
 
 class Tab2(QWidget):
     def __init__(self, parent=None):
@@ -30,20 +28,8 @@ class Tab2(QWidget):
         pass  # No need for this method as it doesn't add any additional functionality
 
     def openCrudWindow(self, name):
-        model_mapping = {
-            'Street': Street,
-            'TypeConstruction': TypeConstruction,
-            'BasicProject': BasicProject,
-            'Appointment': Appointment,
-            'LoadBearingWalls': LoadBearingWalls,
-            'BuildingRoof': BuildingRoof,
-            'BuildingFloor': BuildingFloor,
-            'Facade': Facade,
-            'BuildingDescription': BuildingDescription,
-            'WearRate': WearRate
-            # Map other model names to their respective classes
-        }
-        model_class = model_mapping.get(name)
+
+        model_class = get_model_class(name)
         if model_class:
             crud_window = CrudWindow(name)  # Pass the model class name as a string
             self.windows.append(crud_window)  # Keep track of the opened windows

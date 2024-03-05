@@ -107,7 +107,7 @@ class BuildingDescription(Base):
 
 class WearRate(Base):
     __tablename__ = 'wear_rate'
-    id = Column(Integer, primary_key=True)
+    ID_wear_rate = Column(Integer, primary_key=True)
     date = Column(Date)
     wear_rate_name = Column(String(150))
     ID_building = Column(Integer, ForeignKey('building_description.ID_building'))

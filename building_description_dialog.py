@@ -135,6 +135,7 @@ class UpdateRecordDialog(QDialog):
             save_button = QPushButton("Save")
             save_button.clicked.connect(self.update_record)
             layout.addWidget(save_button)
+            
     def update_record(self):
         # Get updated data from the form fields
         updated_data = {}
