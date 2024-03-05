@@ -47,7 +47,7 @@ class CrudWindow(QWidget):
 
             # Add a Delete button with an icon
             delete_button = QPushButton("Удалить")
-            delete_button.setIcon(QIcon("icons/trashbin.png"))
+            # delete_button.setIcon(QIcon("icons/trashbin.png"))
             delete_button.clicked.connect(lambda: CrudOperations.deleteSelectedItems(self, self.table_widget, self.model_class_name, db_session, CrudOperations.refreshTable))
             self.layout.addWidget(delete_button)
 
