@@ -20,9 +20,9 @@ class Tab1(QWidget):
 
         self.section1 = QVBoxLayout()
         self.section1.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
-        self.section1.addWidget(QLabel("Поиск"))
-        self.addSearchField("Улица", self.section1)
-        self.addSearchField("Номер", self.section1)
+        # self.section1.addWidget(QLabel("Поиск"))
+        # self.addSearchField("Улица", self.section1)
+        # self.addSearchField("Номер", self.section1)
         self.addSection1Buttons(self.section1)
         layout.addLayout(self.section1)
 
@@ -58,11 +58,11 @@ class Tab1(QWidget):
 
     def addSection1Buttons(self, layout):
         section1ButtonsLayout = QHBoxLayout()
-        findButton = QPushButton("Найти")
-        findButton.clicked.connect(self.showFindResults)
+        #findButton = QPushButton("Найти")
+        #findButton.clicked.connect(self.showFindResults)
         addButton = QPushButton("Таблица")
         addButton.clicked.connect(self.addFunction)
-        section1ButtonsLayout.addWidget(findButton)
+        #section1ButtonsLayout.addWidget(findButton)
         section1ButtonsLayout.addWidget(addButton)
         layout.addLayout(section1ButtonsLayout)
 
