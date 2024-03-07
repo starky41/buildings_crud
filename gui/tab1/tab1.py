@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import QWidget, QLineEdit, QLabel, QVBoxLayout, QHBoxLayout, QPushButton, QCompleter, QMessageBox, QDialog
-from gui.tab1.building_description_dialog import MainWidget
+from gui.tab1.buiding_description_table import MainWidget
 from database.models import Street
 from database.database import db_session
 
