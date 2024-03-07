@@ -1,6 +1,3 @@
-from PyQt6.QtWidgets import (QVBoxLayout, QPushButton, QMessageBox,
-    QHBoxLayout, QTableWidgetItem, QWidget
-)
 
 from database.models import BuildingDescription
 from database.database import db_session
@@ -15,19 +12,8 @@ from gui.tab2.tab2 import Tab2
 
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QPushButton, QMessageBox,
-    QHBoxLayout, QTableWidgetItem,
+    QHBoxLayout, QTableWidgetItem
 )
-
-from database.models import BuildingDescription
-from database.database import db_session
-from constants import field_labels
-from sqlalchemy.orm import joinedload
-from constants import LABELS
-from database.data_access_layer import DataAccessLayer
-from ..widgets.sortable_table_widget import SortableTableWidget
-from .add_record_dialog import AddRecordDialog
-from .update_record_dialog import UpdateRecordDialog
-from gui.tab2.tab2 import Tab2
 
 
 class MainWidget(QWidget):
