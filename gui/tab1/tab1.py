@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import QWidget, QLineEdit, QLabel, QVBoxLayout, QHBoxLayout, QPushButton, QCompleter, QMessageBox, QDialog
-from gui.tab1.building_description_dialog import MainDialog
+from gui.tab1.building_description_dialog import MainWidget
 from database.models import Street
 from database.database import db_session
 
@@ -10,10 +10,12 @@ class Tab1(QWidget):
         self.initUI()
 
     def initUI(self):
-        tab1Layout = QVBoxLayout()
+        tab1Layout = QVBoxLayout(self)
         self.setLayout(tab1Layout)
         self.setupTab1SearchSection(tab1Layout)
         self.setupTab1SecondSection(tab1Layout)
+        self.mainWidget = MainWidget()  # Create an instance of MainWidget
+        tab1Layout.addWidget(self.mainWidget)  # Add MainWidget to the layout
 
     def setupTab1SearchSection(self, layout):
         from PyQt6.QtCore import Qt  # Add this import
@@ -23,7 +25,7 @@ class Tab1(QWidget):
         # self.section1.addWidget(QLabel("Поиск"))
         # self.addSearchField("Улица", self.section1)
         # self.addSearchField("Номер", self.section1)
-        self.addSection1Buttons(self.section1)
+        #self.addSection1Buttons(self.section1)
         layout.addLayout(self.section1)
 
     def addSearchField(self, label, layout):
@@ -56,15 +58,15 @@ class Tab1(QWidget):
             QMessageBox.critical(self, "Error", "Entered street does not exist!")
             lineEdit.clear()
 
-    def addSection1Buttons(self, layout):
-        section1ButtonsLayout = QHBoxLayout()
-        #findButton = QPushButton("Найти")
-        #findButton.clicked.connect(self.showFindResults)
-        addButton = QPushButton("Таблица")
-        addButton.clicked.connect(self.addFunction)
-        #section1ButtonsLayout.addWidget(findButton)
-        section1ButtonsLayout.addWidget(addButton)
-        layout.addLayout(section1ButtonsLayout)
+    # def addSection1Buttons(self, layout):
+    #     section1ButtonsLayout = QHBoxLayout()
+    #     #findButton = QPushButton("Найти")
+    #     #findButton.clicked.connect(self.showFindResults)
+    #     # addButton = QPushButton("Таблица")
+    #     # Remove the line below
+    #     # addButton.clicked.connect(self.addFunction)
+    #     #section1ButtonsLayout.addWidget(addButton)
+    #     layout.addLayout(section1ButtonsLayout)
 
     def setupTab1SecondSection(self, layout):
         self.section2Layout = QVBoxLayout()
@@ -81,9 +83,9 @@ class Tab1(QWidget):
         self.section2Wrapper.setVisible(False)
         self.section2Layout.addLayout(self.section2ButtonsLayout)
 
-    def addFunction(self):
-        self.additionalFieldsDialog = MainDialog()
-        self.additionalFieldsDialog.exec()
+    # def addFunction(self):
+    #     self.additionalFieldsDialog = MainWidget()
+    #     self.additionalFieldsDialog.exec()
 
     def showFindResults(self):
         try:

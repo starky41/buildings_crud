@@ -1,5 +1,21 @@
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QPushButton, QMessageBox,
+    QHBoxLayout, QTableWidgetItem, QWidget
+)
+
+from database.models import BuildingDescription
+from database.database import db_session
+from constants import field_labels
+from sqlalchemy.orm import joinedload
+from constants import LABELS
+from database.data_access_layer import DataAccessLayer
+from ..widgets.sortable_table_widget import SortableTableWidget
+from .add_record_dialog import AddRecordDialog
+from .update_record_dialog import UpdateRecordDialog
+from gui.tab2.tab2 import Tab2
+
+from PyQt6.QtWidgets import (
+    QWidget, QVBoxLayout, QPushButton, QMessageBox,
     QHBoxLayout, QTableWidgetItem,
 )
 
@@ -15,7 +31,7 @@ from .update_record_dialog import UpdateRecordDialog
 from gui.tab2.tab2 import Tab2
 
 
-class MainDialog(QDialog):
+class MainWidget(QWidget):
     table_headers = ["ID_building", "street_name", "house", "building_body", "latitude", "longitude", "year_construction",
                     "number_floors", "number_entrances", "number_buildings", "number_living_quarters",
                     "title", "type_construction_name", "basic_project_name", "appointment_name",
@@ -42,7 +58,6 @@ class MainDialog(QDialog):
         self.table_widget.setHorizontalHeaderLabels(self.table_headers)
         layout.addWidget(self.table_widget)
         self.resize(1280, 720)  
-        
 
         # Add buttons for Delete, Update, and Add Record
         button_layout = QHBoxLayout()
@@ -128,8 +143,6 @@ class MainDialog(QDialog):
         update_dialog.exec()
 
         self.populate_table()
-
-
 
     def add_record(self):
         # Open the Add Record dialog
