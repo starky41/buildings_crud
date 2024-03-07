@@ -1,7 +1,6 @@
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLineEdit, QPushButton, QLabel, QHeaderView
 from database.database import engine, db_session
 from database.data_access_layer import DataAccessLayer
-from PyQt6.QtGui import QIcon
 from database.get_model_class import get_model_class
 from database.crud_operations import CrudOperations
 from ..widgets.sortable_table_widget import SortableTableWidget

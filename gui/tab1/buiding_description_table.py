@@ -1,5 +1,4 @@
-from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QPushButton, QMessageBox,
+from PyQt6.QtWidgets import (QVBoxLayout, QPushButton, QMessageBox,
     QHBoxLayout, QTableWidgetItem, QWidget
 )
 
