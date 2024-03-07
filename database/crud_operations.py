@@ -5,8 +5,14 @@ from database.data_access_layer import DataAccessLayer
 from database.database import engine, db_session
 from database.get_model_class import get_model_class
 class CrudOperations:
+    def __init__(self, db_session):
+        self.db_session = db_session
+        self.dal = DataAccessLayer(db_session)
+        
 
-    def createItem(self, model_class_name, db_session, DataAccessLayer, refreshTable, clearLineEdits, table_widget, addUpdateButton, layout):
+    def createItem(self, model_class_name, table_widget, layout):
+        self.refreshTable = CrudOperations.refreshTable
+        self.clearLineEdits = CrudOperations.clearLineEdits
         model_class = get_model_class(model_class_name)
         if model_class:
             inspector = inspect(model_class)
@@ -23,36 +29,32 @@ class CrudOperations:
                 self.showErrorDialog("The value already exists in the database")
                 db_session.rollback()
             else:
-                refreshTable(self, model_class_name, table_widget, addUpdateButton)
-                clearLineEdits(self, columns, layout)
+                self.refreshTable(self, model_class_name, table_widget)
+                self.clearLineEdits(self, columns, layout)
     
-    def refreshTable(self, model_class_name, table_widget, addUpdateButton):
+    def refreshTable(self, model_class_name, table_widget):
+        self.addUpdateButton = CrudOperations.addUpdateButton
         model_class = get_model_class(model_class_name)
         if model_class:
-            # Clear existing data in the table widget
             table_widget.clear()
-
-            # Fetch data from the database table
-            with engine.connect() as connection:
+            with engine.connect() as connection:  # Change this line
                 result = connection.execute(model_class.__table__.select())
                 rows = result.fetchall()
 
-            # Set the table dimensions based on the retrieved data
             table_widget.setRowCount(len(rows))
             table_widget.setColumnCount(len(model_class.__table__.columns))
 
-            # Populate the table with the fetched data
             for row_idx, row in enumerate(rows):
                 for col_idx, col in enumerate(row):
                     item = QTableWidgetItem(str(col))
                     table_widget.setItem(row_idx, col_idx, item)
-                addUpdateButton(self, row_idx, table_widget, model_class_name, addUpdateButton)
+                self.addUpdateButton(self, row_idx, table_widget, model_class_name)
 
-            # Set table headers
             headers = [str(col) for col in model_class.__table__.columns.keys()]
             table_widget.setHorizontalHeaderLabels(headers)
 
-    def addUpdateButton(self, row_idx, table_widget, model_class_name, addUpdateButton):
+
+    def addUpdateButton(self, row_idx, table_widget, model_class_name):
         
         selected_row_index = table_widget.currentRow()
         if selected_row_index != -1:
@@ -67,7 +69,7 @@ class CrudOperations:
                     dal = DataAccessLayer(db_session)
                     updated_data = edit_dialog.getUpdatedData()
                     dal.update(model_class, identifier, updated_data)
-                    self.refreshTable(self, model_class_name, get_model_class, table_widget, addUpdateButton)
+                    self.refreshTable(self, model_class_name, get_model_class, table_widget, self.addUpdateButton)
             else:
                 QMessageBox.warning(self, "No selection", "Please select a row to edit.")
                 update_button = QPushButton("Update")
@@ -75,11 +77,12 @@ class CrudOperations:
                 table_widget.setCellWidget(row_idx, table_widget.columnCount(), update_button)
 
 
-    def handleUpdateButtonClick(self, updateItem, model_class_name, table_widget):
+    def handleUpdateButtonClick(self, model_class_name, table_widget):
+        self.updateItem = CrudOperations.updateItem
         current_row = self.table_widget.currentRow()
         id_item = self.table_widget.item(current_row, 0)  # Assuming the first column is the ID
         if id_item is not None:
-            updateItem(self, id_item.text(), model_class_name, table_widget)
+            self.updateItem(self, id_item.text(), model_class_name, table_widget)
         else:
             QMessageBox.warning(self, "Update Error", "Please select a valid row before updating.")
 
@@ -157,8 +160,9 @@ class CrudOperations:
 
 
 
-    def deleteSelectedItems(self, table_widget, model_class_name, db_session, refreshTable=refreshTable, addUpdateButton=addUpdateButton):
+    def deleteSelectedItems(self, table_widget, model_class_name):
         dal = DataAccessLayer(db_session)
+        self.refreshTable = CrudOperations.refreshTable
         selected_rows = table_widget.selectionModel().selectedRows()
         if not selected_rows:
             QMessageBox.warning(table_widget, "No selection", "Please select the rows you want to delete.")
@@ -179,7 +183,7 @@ class CrudOperations:
                     except IntegrityError as e:
                         QMessageBox.critical(table_widget, "Error", f"An error occurred while deleting the record: {e}")
 
-                refreshTable(self, model_class_name, table_widget, addUpdateButton)
+                self.refreshTable(self, model_class_name, table_widget)
 
 
 
