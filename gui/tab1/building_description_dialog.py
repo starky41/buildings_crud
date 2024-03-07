@@ -1,13 +1,9 @@
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QLabel, QLineEdit, QPushButton, QCompleter, QMessageBox,
-    QHBoxLayout, QGridLayout, QTableWidget, QTableWidgetItem, QHeaderView
+    QDialog, QVBoxLayout, QPushButton, QMessageBox,
+    QHBoxLayout, QTableWidgetItem,
 )
-from PyQt6.QtGui import QIntValidator, QDoubleValidator
-from PyQt6.QtCore import QStringListModel, Qt
-from PyQt6.QtGui import QStandardItemModel, QStandardItem
-from sqlalchemy.orm import sessionmaker
-from database.models import Street, TypeConstruction, BasicProject, Appointment, LoadBearingWalls, \
-    BuildingRoof, BuildingFloor, Facade, Foundation, ManagementCompany, BuildingDescription
+
+from database.models import BuildingDescription
 from database.database import db_session
 from constants import field_labels
 from sqlalchemy.orm import joinedload
@@ -16,7 +12,7 @@ from database.data_access_layer import DataAccessLayer
 from ..widgets.sortable_table_widget import SortableTableWidget
 from .add_record_dialog import AddRecordDialog
 from .update_record_dialog import UpdateRecordDialog
-
+from gui.tab2.tab2 import Tab2
 
 
 class MainDialog(QDialog):
@@ -63,6 +59,11 @@ class MainDialog(QDialog):
         add_record_button = QPushButton("Add Record")
         add_record_button.clicked.connect(self.add_record)
         button_layout.addWidget(add_record_button)
+
+        tab2 = Tab2()  # Assuming an instance of Tab2 is available
+        wear_rate_button = tab2.getWearRateButton()
+        if wear_rate_button:
+            button_layout.addWidget(wear_rate_button)
 
         # Populate the table with data
         self.populate_table()

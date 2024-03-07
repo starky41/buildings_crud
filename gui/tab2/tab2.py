@@ -39,3 +39,9 @@ class Tab2(QWidget):
         button = QPushButton(f'Open {model_class.__name__} CRUD')
         button.clicked.connect(lambda: self.openCrudWindow(model_class))
         self.layout().addWidget(button)  # Add the button to Tab2 layout
+
+    def getWearRateButton(self):
+        for button in self.findChildren(QPushButton):
+            if button.text() == "WearRate":
+                return button
+        return None
