@@ -37,7 +37,7 @@ field_labels = {
         }
 
 LABELS = [  # Store labels and their respective data types
-            ("ID_street", "VARCHAR(150)", Street), ("house", "int", None), ("building_body", "int", None),
+            ("ID_street", "VARCHAR(150)", Street), ("house", "VARCHAR(150)", None), ("building_body", "int", None),
             ("latitude", "numeric", None), ("longitude", "numeric", None), ("year_construction", "int", None),
             ("number_floors", "int", None), ("number_entrances", "int", None), ("number_buildings", "int", None),
             ("number_living_quarters", "int", None), ("title", "VARCHAR(150)", None),

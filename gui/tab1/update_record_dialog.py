@@ -37,7 +37,7 @@ class UpdateRecordDialog(QDialog):
 
                 # Add validator based on data type
                 validator = None
-                if label_text in ("house", "building_body", "cadastral_number", "year_construction", "number_floors",
+                if label_text in ("building_body", "cadastral_number", "year_construction", "number_floors",
                                 "number_entrances", "number_buildings", "number_living_quarters", "cadastral_cost",
                                 "year_overhaul", "Land_area"):
                     validator = QIntValidator()
