@@ -74,8 +74,5 @@ def populate_database():
         dal.create(BasicProject(basic_project_name=project))
 
 
-try:
-    populate_database()
-except IntegrityError as e:
-    print(f"ERROR: {e}")
+
 

@@ -10,6 +10,7 @@ dal = DataAccessLayer(db_session)
 
 def main():
     print("")
+
 if __name__ == "__main__":
     
     main()
