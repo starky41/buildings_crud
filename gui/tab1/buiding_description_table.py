@@ -12,9 +12,10 @@ from gui.tab2.tab2 import Tab2
 
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QPushButton, QMessageBox,
-    QHBoxLayout, QTableWidgetItem
-)
-
+    QHBoxLayout, QTableWidgetItem, QDialog, QLabel, QLineEdit
+) 
+from database.models import WearRate
+from PyQt6.QtCore import Qt, pyqtSignal
 
 class MainWidget(QWidget):
     table_headers = ["ID_building", "street_name", "house", "building_body", "latitude", "longitude", "year_construction",
@@ -163,14 +164,148 @@ class MainWidget(QWidget):
 
     def open_wear_rate_for_current_record(self):
         selected_rows = self.table_widget.selectionModel().selectedRows()
-        
         if not selected_rows:
             QMessageBox.warning(self, "Warning", "Please select a record to open Wear Rate table for.")
-            return 
+            return
 
-        wear_rate_button = self.tab2.getWearRateButton()
-        if wear_rate_button:
-            wear_rate_button.click()  # Simulate a click on the Wear Rate button to open its CRUD window
+        row_index = selected_rows[0].row()
+        record_id_item = self.table_widget.item(row_index, 0)  # Assuming the ID_building is in the first column
+        building_id = int(record_id_item.text())
+
+        session = db_session()
+        wear_rates = session.query(WearRate).filter(WearRate.ID_building == building_id).all()
+        session.close()
+
+        # Prepare data for the dialog
+        wear_rate_data = []
+        for rate in wear_rates:
+            wear_rate_data.append({
+                "ID": rate.ID_wear_rate,
+                "Date": rate.date,
+                "Wear Rate": rate.wear_rate_name
+            })
+
+        wear_rate_dialog = WearRateDialog(wear_rate_data, building_id)
+        wear_rate_dialog.exec()
+
+
+from PyQt6.QtWidgets import QDialog, QVBoxLayout, QPushButton, QLabel, QTableWidgetItem, QMessageBox
+from PyQt6.QtCore import Qt, pyqtSignal
+from database.database import db_session
+from database.models import WearRate
+from datetime import date
+
+
+class NewWearRateDialog(QDialog):
+    record_added = pyqtSignal()
+
+    def __init__(self, building_id):
+        super().__init__()
+        self.setWindowTitle("Add New Wear Rate Record")
+        self.building_id = building_id
+        layout = QVBoxLayout()
+        self.setLayout(layout)
+
+        # Input fields for date and wear rate name
+        self.date_input = QLineEdit()
+        self.date_input.setPlaceholderText("Date (YYYY-MM-DD)")
+        layout.addWidget(self.date_input)
+
+        self.wear_rate_name_input = QLineEdit()
+        self.wear_rate_name_input.setPlaceholderText("Wear Rate Name")
+        layout.addWidget(self.wear_rate_name_input)
+
+        # Add button to confirm adding the new record
+        add_button = QPushButton("Add")
+        add_button.clicked.connect(self.add_new_record)
+        layout.addWidget(add_button)
+
+    def add_new_record(self):
+        # Retrieve input data
+        date_str = self.date_input.text()
+        wear_rate_name = self.wear_rate_name_input.text()
+
+        # Validate input data
+        if not date_str or not wear_rate_name:
+            QMessageBox.warning(self, "Warning", "Please fill in all fields.")
+            return
+
+        try:
+            # Convert date string to date object
+            record_date = date.fromisoformat(date_str)
+        except ValueError:
+            QMessageBox.warning(self, "Error", "Invalid date format. Please use YYYY-MM-DD.")
+            return
+
+        # Create a new wear rate record
+        new_wear_rate = WearRate(date=record_date, wear_rate_name=wear_rate_name, ID_building=self.building_id)
+
+        # Add the new record to the database
+        session = db_session()
+        session.add(new_wear_rate)
+        session.commit()
+        session.close()
+
+        # Emit signal to indicate that a new record has been added
+        self.record_added.emit()
+
+        # Close the dialog
+        self.accept()
+
+
+class WearRateDialog(QDialog):
+    def __init__(self, wear_rate_data, building_id):
+        super().__init__()
+        self.setWindowTitle("Wear Rate")
+        self.building_id = building_id
+        layout = QVBoxLayout()
+        self.setLayout(layout)
+        self.table_widget = SortableTableWidget()
+        layout.addWidget(self.table_widget)
+
+        # Check if wear rate data is available
+        if wear_rate_data:
+            self.populate_table(wear_rate_data)
         else:
-            QMessageBox.warning(self, "Error", "Failed to find the Wear Rate button.")
+            layout.addWidget(QLabel("No wear rate data available."))
 
+        # Add button to add a new record
+        add_button = QPushButton("Add New Record")
+        add_button.clicked.connect(self.add_new_record_dialog)
+        layout.addWidget(add_button)
+
+    def populate_table(self, wear_rate_data):
+        self.table_widget.clear()  # Clear existing contents
+        self.table_widget.setColumnCount(len(wear_rate_data[0]))
+        self.table_widget.setRowCount(len(wear_rate_data))
+        headers = list(wear_rate_data[0].keys())
+        self.table_widget.setHorizontalHeaderLabels(headers)
+        for row_index, row_data in enumerate(wear_rate_data):
+            for col_index, key in enumerate(headers):
+                item = QTableWidgetItem(str(row_data[key]))
+                item.setFlags(Qt.ItemFlag.ItemIsEnabled)
+                self.table_widget.setItem(row_index, col_index, item)
+
+    def add_new_record_dialog(self):
+        # Open a dialog to input data for the new wear rate record
+        new_wear_rate_dialog = NewWearRateDialog(self.building_id)
+        new_wear_rate_dialog.record_added.connect(self.refresh_table)
+        new_wear_rate_dialog.exec()
+
+    def refresh_table(self):
+        # Fetch updated data and refresh the table
+        session = db_session()
+        wear_rates = session.query(WearRate).filter(WearRate.ID_building == self.building_id).all()
+        session.close()
+
+        # Prepare data for the table
+        wear_rate_data = []
+        for rate in wear_rates:
+            wear_rate_data.append({
+                "ID": rate.ID_wear_rate,
+                "Date": rate.date,
+                "Wear Rate": rate.wear_rate_name
+            })
+
+        # Populate the table with updated data
+        self.populate_table(wear_rate_data)
