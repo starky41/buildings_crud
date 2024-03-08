@@ -276,26 +276,52 @@ class WearRateDialog(QDialog):
 
     def populate_table(self, wear_rate_data):
         self.table_widget.clear()  # Clear existing contents
-        self.table_widget.setColumnCount(len(wear_rate_data[0]) + 1)  # Add one column for delete button
+        if not wear_rate_data:
+            layout = QVBoxLayout()
+            self.setLayout(layout)
+            layout.addWidget(QLabel("No wear rate data available."))
+            return
+
+        headers = list(wear_rate_data[0].keys()) + ["Actions", ""]
+        self.table_widget.setColumnCount(len(headers))
         self.table_widget.setRowCount(len(wear_rate_data))
-        headers = list(wear_rate_data[0].keys()) + ["Actions"]
         self.table_widget.setHorizontalHeaderLabels(headers)
+
         for row_index, row_data in enumerate(wear_rate_data):
             for col_index, key in enumerate(headers):
                 if key != "Actions":
-                    item = QTableWidgetItem(str(row_data[key]))
+                    item = QTableWidgetItem(str(row_data.get(key, "")))
                     item.setFlags(Qt.ItemFlag.ItemIsEnabled)
                     self.table_widget.setItem(row_index, col_index, item)
-                else:
+                elif key == "Actions":
+                    edit_button = QPushButton("Edit")
+                    edit_button.clicked.connect(lambda _, index=row_index: self.edit_record_dialog(index))
+                    self.table_widget.setCellWidget(row_index, col_index, edit_button)
+
                     delete_button = QPushButton("Delete")
                     delete_button.clicked.connect(lambda _, index=row_index: self.delete_record(index))
-                    self.table_widget.setCellWidget(row_index, col_index, delete_button)
+                    self.table_widget.setCellWidget(row_index, col_index + 1, delete_button)
+
 
     def add_new_record_dialog(self):
         # Open a dialog to input data for the new wear rate record
         new_wear_rate_dialog = NewWearRateDialog(self.building_id)
         new_wear_rate_dialog.record_added.connect(self.refresh_table)
         new_wear_rate_dialog.exec()
+
+    def edit_record_dialog(self, row_index):
+        # Get data for the selected record
+        record_id_item = self.table_widget.item(row_index, 0)
+        if record_id_item is None:
+            return
+        record_id = int(record_id_item.text())
+        date_item = self.table_widget.item(row_index, 1).text()
+        wear_rate_name = self.table_widget.item(row_index, 2).text()
+
+        # Open a dialog to edit the selected record
+        edit_wear_rate_dialog = EditWearRateDialog(record_id, date_item, wear_rate_name)
+        edit_wear_rate_dialog.record_updated.connect(self.refresh_table)
+        edit_wear_rate_dialog.exec()
 
     def delete_record(self, row_index):
         # Get the ID of the record to be deleted
@@ -335,3 +361,60 @@ class WearRateDialog(QDialog):
 
         # Populate the table with updated data
         self.populate_table(wear_rate_data)
+class EditWearRateDialog(QDialog):
+    record_updated = pyqtSignal()
+
+    def __init__(self, record_id, date, wear_rate_name):
+        super().__init__()
+        self.setWindowTitle("Edit Wear Rate Record")
+        layout = QVBoxLayout()
+        self.setLayout(layout)
+
+        # Input fields for date and wear rate name
+        self.date_input = QLineEdit()
+        self.date_input.setPlaceholderText("Date (YYYY-MM-DD)")
+        self.date_input.setText(date)
+        layout.addWidget(self.date_input)
+
+        self.wear_rate_name_input = QLineEdit()
+        self.wear_rate_name_input.setPlaceholderText("Wear Rate Name")
+        self.wear_rate_name_input.setText(wear_rate_name)
+        layout.addWidget(self.wear_rate_name_input)
+
+        # Add button to confirm editing the record
+        edit_button = QPushButton("Edit")
+        edit_button.clicked.connect(self.edit_record)
+        layout.addWidget(edit_button)
+
+        self.record_id = record_id
+
+    def edit_record(self):
+        # Retrieve input data
+        date_str = self.date_input.text()
+        wear_rate_name = self.wear_rate_name_input.text()
+
+        # Validate input data
+        if not date_str or not wear_rate_name:
+            QMessageBox.warning(self, "Warning", "Please fill in all fields.")
+            return
+
+        try:
+            # Convert date string to date object
+            record_date = date.fromisoformat(date_str)
+        except ValueError:
+            QMessageBox.warning(self, "Error", "Invalid date format. Please use YYYY-MM-DD.")
+            return
+
+        # Update the wear rate record
+        session = db_session()
+        record_to_update = session.query(WearRate).filter(WearRate.ID_wear_rate == self.record_id).first()
+        record_to_update.date = record_date
+        record_to_update.wear_rate_name = wear_rate_name
+        session.commit()
+        session.close()
+
+        # Emit signal to indicate that the record has been updated
+        self.record_updated.emit()
+
+        # Close the dialog
+        self.accept()
