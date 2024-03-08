@@ -276,21 +276,47 @@ class WearRateDialog(QDialog):
 
     def populate_table(self, wear_rate_data):
         self.table_widget.clear()  # Clear existing contents
-        self.table_widget.setColumnCount(len(wear_rate_data[0]))
+        self.table_widget.setColumnCount(len(wear_rate_data[0]) + 1)  # Add one column for delete button
         self.table_widget.setRowCount(len(wear_rate_data))
-        headers = list(wear_rate_data[0].keys())
+        headers = list(wear_rate_data[0].keys()) + ["Actions"]
         self.table_widget.setHorizontalHeaderLabels(headers)
         for row_index, row_data in enumerate(wear_rate_data):
             for col_index, key in enumerate(headers):
-                item = QTableWidgetItem(str(row_data[key]))
-                item.setFlags(Qt.ItemFlag.ItemIsEnabled)
-                self.table_widget.setItem(row_index, col_index, item)
+                if key != "Actions":
+                    item = QTableWidgetItem(str(row_data[key]))
+                    item.setFlags(Qt.ItemFlag.ItemIsEnabled)
+                    self.table_widget.setItem(row_index, col_index, item)
+                else:
+                    delete_button = QPushButton("Delete")
+                    delete_button.clicked.connect(lambda _, index=row_index: self.delete_record(index))
+                    self.table_widget.setCellWidget(row_index, col_index, delete_button)
 
     def add_new_record_dialog(self):
         # Open a dialog to input data for the new wear rate record
         new_wear_rate_dialog = NewWearRateDialog(self.building_id)
         new_wear_rate_dialog.record_added.connect(self.refresh_table)
         new_wear_rate_dialog.exec()
+
+    def delete_record(self, row_index):
+        # Get the ID of the record to be deleted
+        record_id_item = self.table_widget.item(row_index, 0)
+        if record_id_item is None:
+            return
+        record_id = int(record_id_item.text())
+
+        # Confirm deletion with a message box
+        reply = QMessageBox.question(self, "Delete Record", "Are you sure you want to delete this record?",
+                                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        if reply == QMessageBox.StandardButton.Yes:
+            # Delete the record from the database
+            session = db_session()
+            record_to_delete = session.query(WearRate).filter(WearRate.ID_wear_rate == record_id).first()
+            session.delete(record_to_delete)
+            session.commit()
+            session.close()
+
+            # Refresh the table
+            self.refresh_table()
 
     def refresh_table(self):
         # Fetch updated data and refresh the table
