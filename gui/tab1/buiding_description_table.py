@@ -39,6 +39,7 @@ class MainWidget(QWidget):
         self.setLayout(layout)
         self.dal = DataAccessLayer(db_session)
         self.table_widget = SortableTableWidget()
+        self.tab2 = Tab2()  # Assuming an instance of Tab2 is available
         self.table_widget.setColumnCount(len(self.table_headers))
         self.table_widget.setHorizontalHeaderLabels(self.table_headers)
         layout.addWidget(self.table_widget)
@@ -60,10 +61,10 @@ class MainWidget(QWidget):
         add_record_button.clicked.connect(self.add_record)
         button_layout.addWidget(add_record_button)
 
-        tab2 = Tab2()  # Assuming an instance of Tab2 is available
-        wear_rate_button = tab2.getWearRateButton()
-        if wear_rate_button:
-            button_layout.addWidget(wear_rate_button)
+        
+        wear_rate_button = QPushButton('Open Wear Rate')
+        wear_rate_button.clicked.connect(self.open_wear_rate_for_current_record)
+        button_layout.addWidget(wear_rate_button)
 
         # Populate the table with data
         self.populate_table()
@@ -159,3 +160,17 @@ class MainWidget(QWidget):
             QMessageBox.information(self, "Success", "Record deleted successfully.")
         except Exception as e:
             QMessageBox.warning(self, "Error", f"Failed to delete record: {str(e)}")
+
+    def open_wear_rate_for_current_record(self):
+        selected_rows = self.table_widget.selectionModel().selectedRows()
+        
+        if not selected_rows:
+            QMessageBox.warning(self, "Warning", "Please select a record to open Wear Rate table for.")
+            return 
+
+        wear_rate_button = self.tab2.getWearRateButton()
+        if wear_rate_button:
+            wear_rate_button.click()  # Simulate a click on the Wear Rate button to open its CRUD window
+        else:
+            QMessageBox.warning(self, "Error", "Failed to find the Wear Rate button.")
+
