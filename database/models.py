@@ -5,7 +5,7 @@ from database.database import Base
 class Street(Base):
     __tablename__ = 'street'
     ID_street = Column(Integer, primary_key=True, autoincrement=True) 
-    street_name = Column(String(150), unique=True, nullable=False)
+    street_name = Column(String(150), unique=True, nullable=False, index=True)
 
 class TypeConstruction(Base):
     __tablename__ = 'type_construction'
