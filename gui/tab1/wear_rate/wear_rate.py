@@ -115,107 +115,75 @@ class WearRateDialog(QDialog):
         # Populate the table with updated data
         self.populate_table(wear_rate_data)
 
-class EditWearRateDialog(QDialog):
+class BaseWearRateDialog(QDialog):
     record_updated = pyqtSignal()
+    record_added = pyqtSignal()
 
-    def __init__(self, record_id, date, wear_rate_name):
-        super().__init__()
-        self.setWindowTitle("Edit Wear Rate Record")
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         layout = QVBoxLayout()
         self.setLayout(layout)
 
         # Input fields for date and wear rate name
         self.date_input = QLineEdit()
         self.date_input.setPlaceholderText("Date (YYYY-MM-DD)")
-        self.date_input.setText(date)
         layout.addWidget(self.date_input)
 
         self.wear_rate_name_input = QLineEdit()
         self.wear_rate_name_input.setPlaceholderText("Wear Rate Name")
-        self.wear_rate_name_input.setText(wear_rate_name)
         layout.addWidget(self.wear_rate_name_input)
 
-        # Add button to confirm editing the record
-        edit_button = QPushButton("Edit")
-        edit_button.clicked.connect(self.edit_record)
-        layout.addWidget(edit_button)
+        # Add button to confirm action
+        if isinstance(self, EditWearRateDialog):
+            button_text = "Edit"
+            self.action_function = self.edit_record
+        elif isinstance(self, NewWearRateDialog):
+            button_text = "Add"
+            self.action_function = self.add_new_record
 
-        self.record_id = record_id
+        action_button = QPushButton(button_text)
+        action_button.clicked.connect(self.action_function)
+        layout.addWidget(action_button)
+
+    def validate_input(self, date_str, wear_rate_name):
+        if not date_str or not wear_rate_name:
+            QMessageBox.warning(self, "Warning", "Please fill in all fields.")
+            return False
+
+        try:
+            date.fromisoformat(date_str)
+        except ValueError:
+            QMessageBox.warning(self, "Error", "Invalid date format. Please use YYYY-MM-DD.")
+            return False
+
+        return True
 
     def edit_record(self):
-        # Retrieve input data
         date_str = self.date_input.text()
         wear_rate_name = self.wear_rate_name_input.text()
 
-        # Validate input data
-        if not date_str or not wear_rate_name:
-            QMessageBox.warning(self, "Warning", "Please fill in all fields.")
-            return
-
-        try:
-            # Convert date string to date object
-            record_date = date.fromisoformat(date_str)
-        except ValueError:
-            QMessageBox.warning(self, "Error", "Invalid date format. Please use YYYY-MM-DD.")
+        if not self.validate_input(date_str, wear_rate_name):
             return
 
         # Update the wear rate record
         session = db_session()
         record_to_update = session.query(WearRate).filter(WearRate.ID_wear_rate == self.record_id).first()
-        record_to_update.date = record_date
+        record_to_update.date = date.fromisoformat(date_str)
         record_to_update.wear_rate_name = wear_rate_name
         session.commit()
         session.close()
 
-        # Emit signal to indicate that the record has been updated
         self.record_updated.emit()
-
-        # Close the dialog
         self.accept()
 
-class NewWearRateDialog(QDialog):
-    record_added = pyqtSignal()
-
-    def __init__(self, building_id):
-        super().__init__()
-        self.setWindowTitle("Add New Wear Rate Record")
-        self.building_id = building_id
-        layout = QVBoxLayout()
-        self.setLayout(layout)
-
-        # Input fields for date and wear rate name
-        self.date_input = QLineEdit()
-        self.date_input.setPlaceholderText("Date (YYYY-MM-DD)")
-        layout.addWidget(self.date_input)
-
-        self.wear_rate_name_input = QLineEdit()
-        self.wear_rate_name_input.setPlaceholderText("Wear Rate Name")
-        layout.addWidget(self.wear_rate_name_input)
-
-        # Add button to confirm adding the new record
-        add_button = QPushButton("Add")
-        add_button.clicked.connect(self.add_new_record)
-        layout.addWidget(add_button)
-
     def add_new_record(self):
-        # Retrieve input data
         date_str = self.date_input.text()
         wear_rate_name = self.wear_rate_name_input.text()
 
-        # Validate input data
-        if not date_str or not wear_rate_name:
-            QMessageBox.warning(self, "Warning", "Please fill in all fields.")
+        if not self.validate_input(date_str, wear_rate_name):
             return
 
-        try:
-            # Convert date string to date object
-            record_date = date.fromisoformat(date_str)
-        except ValueError:
-            QMessageBox.warning(self, "Error", "Invalid date format. Please use YYYY-MM-DD.")
-            return
-
-        # Create a new wear rate record
-        new_wear_rate = WearRate(date=record_date, wear_rate_name=wear_rate_name, ID_building=self.building_id)
+        new_wear_rate = WearRate(date=date.fromisoformat(date_str), wear_rate_name=wear_rate_name, ID_building=self.building_id)
 
         # Add the new record to the database
         session = db_session()
@@ -223,8 +191,19 @@ class NewWearRateDialog(QDialog):
         session.commit()
         session.close()
 
-        # Emit signal to indicate that a new record has been added
         self.record_added.emit()
-
-        # Close the dialog
         self.accept()
+
+class EditWearRateDialog(BaseWearRateDialog):
+    def __init__(self, record_id, date, wear_rate_name):
+        super().__init__()
+        self.setWindowTitle("Edit Wear Rate Record")
+        self.record_id = record_id
+        self.date_input.setText(date)
+        self.wear_rate_name_input.setText(wear_rate_name)
+
+class NewWearRateDialog(BaseWearRateDialog):
+    def __init__(self, building_id):
+        super().__init__()
+        self.setWindowTitle("Add New Wear Rate Record")
+        self.building_id = building_id
