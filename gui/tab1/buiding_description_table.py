@@ -181,9 +181,9 @@ class MainWidget(QWidget):
         wear_rate_data = []
         for rate in wear_rates:
             wear_rate_data.append({
-                "ID": rate.ID_wear_rate,
-                "Date": rate.date,
-                "Wear Rate": rate.wear_rate_name
+                "ИД": rate.ID_wear_rate,
+                "Дата": rate.date,
+                "Степень износа": rate.wear_rate_name
             })
 
         wear_rate_dialog = WearRateDialog(wear_rate_data, building_id)

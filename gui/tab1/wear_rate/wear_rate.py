@@ -9,7 +9,8 @@ from gui.widgets.sortable_table_widget import SortableTableWidget
 class WearRateDialog(QDialog):
     def __init__(self, wear_rate_data, building_id):
         super().__init__()
-        self.setWindowTitle("Wear Rate")
+        self.setWindowTitle("Износ")
+        self.resize(640, 480)
         self.building_id = building_id
         layout = QVBoxLayout()
         self.setLayout(layout)
@@ -20,10 +21,10 @@ class WearRateDialog(QDialog):
         if wear_rate_data:
             self.populate_table(wear_rate_data)
         else:
-            layout.addWidget(QLabel("No wear rate data available."))
+            layout.addWidget(QLabel("Данные износа отсутствуют для выбранной записи."))
 
         # Add button to add a new record
-        add_button = QPushButton("Add New Record")
+        add_button = QPushButton("Создать новую запись")
         add_button.clicked.connect(self.add_new_record_dialog)
         layout.addWidget(add_button)
 
@@ -32,26 +33,26 @@ class WearRateDialog(QDialog):
         if not wear_rate_data:
             layout = QVBoxLayout()
             self.setLayout(layout)
-            layout.addWidget(QLabel("No wear rate data available."))
+            layout.addWidget(QLabel("Данные износа отсутствуют для выбранной записи."))
             return
 
-        headers = list(wear_rate_data[0].keys()) + ["Actions", ""]
+        headers = list(wear_rate_data[0].keys()) + ["Действия", ""]
         self.table_widget.setColumnCount(len(headers))
         self.table_widget.setRowCount(len(wear_rate_data))
         self.table_widget.setHorizontalHeaderLabels(headers)
 
         for row_index, row_data in enumerate(wear_rate_data):
             for col_index, key in enumerate(headers):
-                if key != "Actions":
+                if key != "Действия":
                     item = QTableWidgetItem(str(row_data.get(key, "")))
                     item.setFlags(Qt.ItemFlag.ItemIsEnabled)
                     self.table_widget.setItem(row_index, col_index, item)
-                elif key == "Actions":
-                    edit_button = QPushButton("Edit")
+                elif key == "Действия":
+                    edit_button = QPushButton("Изменить")
                     edit_button.clicked.connect(lambda _, index=row_index: self.edit_record_dialog(index))
                     self.table_widget.setCellWidget(row_index, col_index, edit_button)
 
-                    delete_button = QPushButton("Delete")
+                    delete_button = QPushButton("Удалить")
                     delete_button.clicked.connect(lambda _, index=row_index: self.delete_record(index))
                     self.table_widget.setCellWidget(row_index, col_index + 1, delete_button)
 
@@ -84,7 +85,7 @@ class WearRateDialog(QDialog):
         record_id = int(record_id_item.text())
 
         # Confirm deletion with a message box
-        reply = QMessageBox.question(self, "Delete Record", "Are you sure you want to delete this record?",
+        reply = QMessageBox.question(self, "Удалить запись", "Вы уверены что хотите удалить данную запись?",
                                      QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
         if reply == QMessageBox.StandardButton.Yes:
             # Delete the record from the database
@@ -108,8 +109,8 @@ class WearRateDialog(QDialog):
         for rate in wear_rates:
             wear_rate_data.append({
                 "ID": rate.ID_wear_rate,
-                "Date": rate.date,
-                "Wear Rate": rate.wear_rate_name
+                "Дата": rate.date,
+                "Износ": rate.wear_rate_name
             })
 
         # Populate the table with updated data
@@ -126,19 +127,19 @@ class BaseWearRateDialog(QDialog):
 
         # Input fields for date and wear rate name
         self.date_input = QLineEdit()
-        self.date_input.setPlaceholderText("Date (YYYY-MM-DD)")
+        self.date_input.setPlaceholderText("Дата (ГГГГ-ММ-ДД)")
         layout.addWidget(self.date_input)
 
         self.wear_rate_name_input = QLineEdit()
-        self.wear_rate_name_input.setPlaceholderText("Wear Rate Name")
+        self.wear_rate_name_input.setPlaceholderText("Износ")
         layout.addWidget(self.wear_rate_name_input)
 
         # Add button to confirm action
         if isinstance(self, EditWearRateDialog):
-            button_text = "Edit"
+            button_text = "Изменить"
             self.action_function = self.edit_record
         elif isinstance(self, NewWearRateDialog):
-            button_text = "Add"
+            button_text = "Добавить"
             self.action_function = self.add_new_record
 
         action_button = QPushButton(button_text)
@@ -147,13 +148,13 @@ class BaseWearRateDialog(QDialog):
 
     def validate_input(self, date_str, wear_rate_name):
         if not date_str or not wear_rate_name:
-            QMessageBox.warning(self, "Warning", "Please fill in all fields.")
+            QMessageBox.warning(self, "Warning", "Пожалуйста, заполните все поля.")
             return False
 
         try:
             date.fromisoformat(date_str)
         except ValueError:
-            QMessageBox.warning(self, "Error", "Invalid date format. Please use YYYY-MM-DD.")
+            QMessageBox.warning(self, "Ошибка", "Неверный формат даты. Введите дату в формате ГГГГ-ММ-ДД. (например: 2000-12-31)")
             return False
 
         return True
@@ -197,7 +198,7 @@ class BaseWearRateDialog(QDialog):
 class EditWearRateDialog(BaseWearRateDialog):
     def __init__(self, record_id, date, wear_rate_name):
         super().__init__()
-        self.setWindowTitle("Edit Wear Rate Record")
+        self.setWindowTitle("Изменение записи")
         self.record_id = record_id
         self.date_input.setText(date)
         self.wear_rate_name_input.setText(wear_rate_name)
@@ -205,5 +206,5 @@ class EditWearRateDialog(BaseWearRateDialog):
 class NewWearRateDialog(BaseWearRateDialog):
     def __init__(self, building_id):
         super().__init__()
-        self.setWindowTitle("Add New Wear Rate Record")
+        self.setWindowTitle("Создание записи")
         self.building_id = building_id
