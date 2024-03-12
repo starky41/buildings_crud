@@ -18,19 +18,50 @@ from database.models import WearRate
 
 from gui.tab1.wear_rate.wear_rate import WearRateDialog
 
+
 class MainWidget(QWidget):
-    table_headers = ["ID_building", "street_name", "house", "building_body", "latitude", "longitude", "year_construction",
-                    "number_floors", "number_entrances", "number_buildings", "number_living_quarters",
-                    "title", "type_construction_name", "basic_project_name", "appointment_name",
-                    "seismic_resistance_min", "seismic_resistance_max", "zone_SMZ_min", "zone_SMZ_max",
-                    "priming", "load_bearing_walls_name", "basement_area", "building_roof_name",
-                    "building_floor_name", "facade_name", "foundation_name", "azimuth", "cadastral_number",
-                    "cadastral_cost", "year_overhaul", "accident_rate", "management_company_name",
-                    "Land_area", "notes", "author"]
+    # Translated column names
+    translation_dict = {
+        "ID_building": "ИД",
+        "street_name": "Улица",
+        "house": "Дом",
+        "building_body": "Корпус",
+        "latitude": "Широта",
+        "longitude": "Долгота",
+        "year_construction": "Год постройки",
+        "number_floors": "Кол-во этажей",
+        "number_entrances": "Кол-во подъездов",
+        "number_buildings": "Кол-во строений",
+        "number_living_quarters": "Кол-во жилых помещений",
+        "title": "Название",
+        "type_construction_name": "Тип конструкции",
+        "basic_project_name": "Типовой проект",
+        "appointment_name": "Назначение",
+        "seismic_resistance_min": "Мин сейсмостойкость",
+        "seismic_resistance_max": "Макс сейсмостойкость",
+        "zone_SMZ_min": "Мин зона СМЗ",
+        "zone_SMZ_max": "Макс зона СМЗ",
+        "priming": "Грунт",
+        "load_bearing_walls_name": "Несущие стены",
+        "basement_area": "Площадь подвала",
+        "building_roof_name": "Крыша",
+        "building_floor_name": "Перекрытия",
+        "facade_name": "Фасад",
+        "foundation_name": "Фундамент",
+        "azimuth": "Азимут",
+        "cadastral_number": "Кадастровый номер",
+        "cadastral_cost": "Кадастровая стоимость",
+        "year_overhaul": "Год капремонта",
+        "accident_rate": "Аварийность",
+        "management_company_name": "Упр компания",
+        "Land_area": "Площадь земельного участка",
+        "notes": "Примечания",
+        "author": "Автор"
+    }
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Main Window")
+        self.setWindowTitle("Описания зданий")
         self.initUI()
 
         # Initialize substituted_values dictionary
@@ -42,8 +73,9 @@ class MainWidget(QWidget):
         self.dal = DataAccessLayer(db_session)
         self.table_widget = SortableTableWidget()
         self.tab2 = Tab2()  # Assuming an instance of Tab2 is available
-        self.table_widget.setColumnCount(len(self.table_headers))
-        self.table_widget.setHorizontalHeaderLabels(self.table_headers)
+        self.table_widget.setColumnCount(len(self.translation_dict))
+        translated_headers = [self.translation_dict[key] for key in self.translation_dict]
+        self.table_widget.setHorizontalHeaderLabels(translated_headers)
         layout.addWidget(self.table_widget)
         self.resize(1280, 720)  
 
@@ -51,20 +83,19 @@ class MainWidget(QWidget):
         button_layout = QHBoxLayout()
         layout.addLayout(button_layout)
 
-        delete_button = QPushButton("Delete Selected Record")
+        delete_button = QPushButton("Удалить")
         delete_button.clicked.connect(self.delete_selected_record)
         button_layout.addWidget(delete_button)
 
-        update_button = QPushButton("Update Selected Record")
+        update_button = QPushButton("Изменить")
         update_button.clicked.connect(self.update_record)
         button_layout.addWidget(update_button)
 
-        add_record_button = QPushButton("Add Record")
+        add_record_button = QPushButton("Создать")
         add_record_button.clicked.connect(self.add_record)
         button_layout.addWidget(add_record_button)
 
-        
-        wear_rate_button = QPushButton('Open Wear Rate')
+        wear_rate_button = QPushButton('Износ')
         wear_rate_button.clicked.connect(self.open_wear_rate_for_current_record)
         button_layout.addWidget(wear_rate_button)
 
@@ -91,7 +122,7 @@ class MainWidget(QWidget):
 
         # Populate the table with data
         for row_index, row_data in enumerate(data):
-            for col_index, header in enumerate(self.table_headers):
+            for col_index, header in enumerate(self.translation_dict):
                 cell_value = ""
 
                 if hasattr(row_data, header):
@@ -114,23 +145,24 @@ class MainWidget(QWidget):
                 self.table_widget.setItem(row_index, col_index, QTableWidgetItem(cell_value))
 
         session.close()
-
     def update_record(self):
         selected_rows = self.table_widget.selectionModel().selectedRows()
         if not selected_rows:
-            QMessageBox.warning(self, "Warning", "Please select a record to update.")
+            QMessageBox.warning(self, "Предупреждение", "Выберите запись для изменения.")
             return
 
         row_index = selected_rows[0].row()
         record_data = {}
-        for col_index, header in enumerate(self.table_headers):
- 
+        for col_index, header in enumerate(self.translation_dict):
+            translated_header = self.translation_dict[header]
             record_data[header] = self.table_widget.item(row_index, col_index).text()
 
         update_dialog = UpdateRecordDialog(record_data)
         update_dialog.exec()
 
         self.populate_table()
+
+
 
     def add_record(self):
         # Open the Add Record dialog
@@ -143,7 +175,7 @@ class MainWidget(QWidget):
     def delete_selected_record(self):
         selected_rows = self.table_widget.selectionModel().selectedRows()
         if not selected_rows:
-            QMessageBox.warning(self, "Warning", "Please select a record to delete.")
+            QMessageBox.warning(self, "Предупреждение", "Пожалуйста, выберите запись для удаления")
             return
 
         # Assuming only one row can be selected at a time
@@ -152,21 +184,21 @@ class MainWidget(QWidget):
         try:
             record_id = int(cell_text)
         except ValueError:
-            QMessageBox.warning(self, "Error", "Invalid record ID.")
+            QMessageBox.warning(self, "Ошибка", "Неверное значение идентификатора записи.")
             return
 
         try:
             self.dal.delete(BuildingDescription, ID_building=record_id)
             # Remove the row from the table
             self.table_widget.removeRow(row_index)
-            QMessageBox.information(self, "Success", "Record deleted successfully.")
+            QMessageBox.information(self, "Успешно", "Запись успешно удалена.")
         except Exception as e:
-            QMessageBox.warning(self, "Error", f"Failed to delete record: {str(e)}")
+            QMessageBox.warning(self, "Ошибка", f"При удалении записи возникла ошибка: {str(e)}")
 
     def open_wear_rate_for_current_record(self):
         selected_rows = self.table_widget.selectionModel().selectedRows()
         if not selected_rows:
-            QMessageBox.warning(self, "Warning", "Please select a record to open Wear Rate table for.")
+            QMessageBox.warning(self, "Предупреждение", "Пожалуйста, выберите запись для которой вы хотите открыть таблицу \"Износ\".")
             return
 
         row_index = selected_rows[0].row()

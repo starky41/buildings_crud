@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QTableWidget
+from PyQt6.QtWidgets import QTableWidget, QHeaderView
 from PyQt6.QtCore import Qt
 
 class SortableTableWidget(QTableWidget):
@@ -9,6 +9,18 @@ class SortableTableWidget(QTableWidget):
         self.horizontalHeader().sectionClicked.connect(self.sort_column)
         self.last_sorted_column = None
         self.sort_order = Qt.SortOrder.AscendingOrder
+
+        # Set resize mode to allow manual adjustment
+        self.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
+
+    def resizeEvent(self, event):
+        # After the widget is resized, trigger automatic resizing
+        super().resizeEvent(event)
+        self.resize_columns_to_contents()
+
+    def resize_columns_to_contents(self):
+        for column in range(self.columnCount()):
+            self.resizeColumnToContents(column)
 
     def sort_column(self, logical_index):
         # If the same column header is clicked, toggle the sort order
