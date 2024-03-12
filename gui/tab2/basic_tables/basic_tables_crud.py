@@ -1,8 +1,8 @@
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLineEdit, QPushButton, QLabel, QHeaderView
 from database.database import db_session
 from database.get_model_class import get_model_class
-from database.crud_operations import CrudOperations
-from ..widgets.sortable_table_widget import SortableTableWidget
+from gui.tab2.basic_tables.crud_operations import CrudOperations
+from ...widgets.sortable_table_widget import SortableTableWidget
 class CrudWindow(QWidget):
     def __init__(self, model_class_name):
         super().__init__()
