@@ -2,14 +2,10 @@ from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QGridLayout, QLabel, QLineEdit, QPushButton, QCompleter
 )
 from PyQt6.QtGui import QIntValidator, QDoubleValidator
-from sqlalchemy.orm import sessionmaker
-from models import Street, TypeConstruction, BasicProject, Appointment, LoadBearingWalls, \
+from database.models import Street, TypeConstruction, BasicProject, Appointment, LoadBearingWalls, \
     BuildingRoof, BuildingFloor, Facade, Foundation, ManagementCompany, BuildingDescription
 from PyQt6.QtCore import QStringListModel
 from database import db_session
-from data_access_layer import DataAccessLayer
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy import inspect
 from constants import field_labels
 from PyQt6.QtWidgets import QTableWidget, QTableWidgetItem, QHeaderView
 from sqlalchemy.orm import joinedload
