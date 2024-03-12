@@ -58,12 +58,13 @@ class CrudOperations:
 
 
     def addUpdateButton(self, row_idx, table_widget, model_class_name):
-        
+            
         selected_row_index = table_widget.currentRow()
         if selected_row_index != -1:
             model_class = get_model_class(model_class_name)
             if model_class:
                 primary_key_columns = [col.name for col in model_class.__table__.primary_key]
+                column_names = [col.name for col in model_class.__table__.columns]
                 row_data = [table_widget.item(selected_row_index, col).text() for col in range(table_widget.columnCount())]
                 identifier = {col: val for col, val in zip(primary_key_columns, row_data)}
                 # Assuming there is a method to get a form or dialog to edit the selected item
@@ -105,7 +106,7 @@ class CrudOperations:
                         editable_columns.append(column.name)
                 if column.primary_key:
                     primary_key_column = column.name
-            
+                
             if primary_key_column and editable_columns:
                 # Convert id_value to an integer
                 id_value = int(id_value)
@@ -126,7 +127,8 @@ class CrudOperations:
                     
                     input_fields = {}
                     for col, value in zip(editable_columns, item_values):
-                        label = QLabel(col.replace("_", " ").title(), dialog)
+                        russian_label = BASIC_FIELDS_LABELS.get(col, col)
+                        label = QLabel(russian_label.replace("_", " ").title(), dialog)
                         input_field = QLineEdit(dialog)
                         input_field.setText(value)
                         layout.addWidget(label)
@@ -160,7 +162,6 @@ class CrudOperations:
                     self.showErrorDialog(f"Запись не найдена для значения {primary_key_column}.")
             else:
                 self.showErrorDialog("В данной таблице нет редактируемых столбцов.")
-
 
 
     def deleteSelectedItems(self, table_widget, model_class_name):
