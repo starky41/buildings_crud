@@ -18,7 +18,7 @@ class AddRecordDialog(QDialog):
         self.line_edits = {}  # Initialize line edits dictionary
         self.foreign_keys = {}  # Initialize dictionary to store foreign key name-value pairs
         super().__init__()
-        self.setWindowTitle("Add Record")
+        self.setWindowTitle("Создание записи")
         self.initUI()
         self.substituted_values = {}
         self.dal = DataAccessLayer(db_session())
@@ -38,7 +38,7 @@ class AddRecordDialog(QDialog):
         self.labels = LABELS
 
         self.show_bd_fields(layout)  # Call the function to create fields
-        self.save_button = QPushButton("Save")
+        self.save_button = QPushButton("Создать")
         self.save_button.clicked.connect(self.save_record)  # Connect save_record method to clicked signal
         layout.addWidget(self.save_button)  # Add a save button or any other buttons as needed
 
@@ -103,7 +103,7 @@ class AddRecordDialog(QDialog):
         # Check if the required fields are empty
         for field in required_fields:
             if not self.line_edits[field].text():
-                QMessageBox.warning(self, "Warning", f"Please enter a value for {field}.")
+                QMessageBox.warning(self, "Предупреждение", f"Пожалуйста, введите значение для {field}.")
                 return
 
         for label_text, _, _ in self.labels:
@@ -122,7 +122,7 @@ class AddRecordDialog(QDialog):
                     if related_instance:
                         data[label_text] = getattr(related_instance[0], "ID_" + related_model.__tablename__)
                     else:
-                        QMessageBox.warning(self, "Warning", f"No matching record found for {name_value} in {related_model.__tablename__}.")
+                        QMessageBox.warning(self, "Предупреждение", f"Не найдена запись для {name_value} в таблице {related_model.__tablename__}.")
                         return
 
         # Create a new instance of BuildingDescription with the data
@@ -131,11 +131,11 @@ class AddRecordDialog(QDialog):
         # Add the new record to the database
         try:
             self.dal.create(new_building)
-            QMessageBox.information(self, "Success", "Record added successfully.")
+            QMessageBox.information(self, "Успешно", "Запись добавлена.")
             self.clear_fields()
             self.close()
         except Exception as e:
-            QMessageBox.warning(self, "Error", f"Failed to add record: {str(e)}")
+            QMessageBox.warning(self, "Ошибка", f"Не удалось создать запись: {str(e)}")
 
     def clear_fields(self):
         for line_edit in self.line_edits.values():
