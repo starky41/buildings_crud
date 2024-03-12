@@ -4,32 +4,31 @@ from PyQt6.QtWidgets import QMessageBox, QTableWidgetItem, QPushButton, QDialog,
 from database.data_access_layer import DataAccessLayer
 from database.database import engine, db_session
 from database.get_model_class import get_model_class
+from constants import BASIC_FIELDS_LABELS
 class CrudOperations:
     def __init__(self, db_session):
         self.db_session = db_session
         self.dal = DataAccessLayer(db_session)
 
-    def createItem(self, model_class_name, table_widget, layout):
+    def createItem(self, model_class_name, table_widget, data, layout):
         self.refreshTable = CrudOperations.refreshTable
         self.clearLineEdits = CrudOperations.clearLineEdits
+        
         model_class = get_model_class(model_class_name)
         if model_class:
             inspector = inspect(model_class)
             columns = [column.name for column in inspector.columns]
             try:
-                data = self.getFormData(columns=columns, model_class=model_class, layout=layout)
-                new_instance = model_class(**data)
                 dal = DataAccessLayer(db_session)
-                dal.create(new_instance)
+                dal.create(model_class(**data))
             except ValueError as e:
-                self.showErrorDialog(str(e))
-                db_session.rollback()
+                raise ValueError(str(e))
             except IntegrityError:
-                self.showErrorDialog("Значение уже существует в базе данных")
-                db_session.rollback()
+                raise IntegrityError("Значение уже существует в базе данных")
             else:
                 self.refreshTable(self, model_class_name, table_widget)
-                self.clearLineEdits(self, columns, layout)
+                self.clearLineEdits(self, columns, layout)  # Adjust this line if needed
+
 
     def refreshTable(self, model_class_name, table_widget):
         self.addUpdateButton = CrudOperations.addUpdateButton
@@ -43,37 +42,10 @@ class CrudOperations:
             table_widget.setRowCount(len(rows))
             table_widget.setColumnCount(len(model_class.__table__.columns))
 
-            # Mapping between database column names and display names
-            display_names = {
-                'ID_street': 'ID улицы',
-                'street_name': 'Название улицы',
-                'ID_type_construction': 'ID типа конструкции',
-                'type_construction_name': 'Название типа конструкции',
-                'ID_basic_project': 'ID базового проекта',
-                'basic_project_name': 'Название базового проекта',
-                'ID_appointment': 'ID назначения',
-                'appointment_name': 'Название назначения',
-                'ID_load_bearing_walls': 'ID несущих стен',
-                'load_bearing_walls_name': 'Название несущих стен',
-                'ID_building_roof': 'ID крыши',
-                'building_roof_name': 'Название крыши',
-                'ID_building_floor': 'ID пола',
-                'building_floor_name': 'Название пола',
-                'ID_facade': 'ID фасада',
-                'facade_name': 'Название фасада',
-                'ID_foundation': 'ID фундамента',
-                'foundation_name': 'Название фундамента',
-                'ID_management_company': 'ID управляющей компании',
-                'management_company_name': 'Название управляющей компании',
-                'ID_wear_rate': 'ID износа',
-                'date': 'Дата',
-                'wear_rate_name': 'Название степени',
-                'ID_building': 'ID здания',
-                # Add more mappings as needed
-            }
+            
 
             # Translate column names to display names
-            header_labels = [display_names.get(col.name, col.name) for col in model_class.__table__.columns]
+            header_labels = [BASIC_FIELDS_LABELS.get(col.name, col.name) for col in model_class.__table__.columns]
             table_widget.setHorizontalHeaderLabels(header_labels)
 
             for row_idx, row in enumerate(rows):
@@ -102,8 +74,8 @@ class CrudOperations:
                     dal.update(model_class, identifier, updated_data)
                     self.refreshTable(self, model_class_name, get_model_class, table_widget, self.addUpdateButton)
             else:
-                QMessageBox.warning(self, "No selection", "Please select a row to edit.")
-                update_button = QPushButton("Update")
+                QMessageBox.warning(self, "Не выбрана запись", "Выберите запись для изменения.")
+                update_button = QPushButton("Изменить")
                 update_button.clicked.connect(lambda: self.updateItem(row_idx))
                 table_widget.setCellWidget(row_idx, table_widget.columnCount(), update_button)
 
@@ -115,7 +87,7 @@ class CrudOperations:
         if id_item is not None:
             self.updateItem(self, id_item.text(), model_class_name, table_widget)
         else:
-            QMessageBox.warning(self, "Update Error", "Please select a valid row before updating.")
+            QMessageBox.warning(self, "Ошибка обновления", "Пожалуйста, выберите запись для обновления.")
 
     def updateItem(self, id_value, model_class_name, table_widget):
         model_class = get_model_class(model_class_name)
@@ -149,7 +121,7 @@ class CrudOperations:
                 if row_idx != -1:
                     item_values = [table_widget.item(row_idx, column_names.index(col)).text() for col in editable_columns]
                     dialog = QDialog(self)
-                    dialog.setWindowTitle("Update Record")
+                    dialog.setWindowTitle("Изменение записи")
                     layout = QVBoxLayout()
                     
                     input_fields = {}
@@ -161,11 +133,11 @@ class CrudOperations:
                         layout.addWidget(input_field)
                         input_fields[col] = input_field
                     
-                    submit_button = QPushButton("Submit", dialog)
+                    submit_button = QPushButton("Подтвердить", dialog)
                     layout.addWidget(submit_button)
                     
                     for field_name, field_value in input_fields.items():
-                        field_value.setPlaceholderText("Enter new value for " + field_name)
+                        field_value.setPlaceholderText("Введите новое значение для " + field_name)
                     
                     def update_record():
                         new_values = {field_name: field_value.text() for field_name, field_value in input_fields.items()}
@@ -176,18 +148,18 @@ class CrudOperations:
                                     table_widget.item(row_idx, column_names.index(col)).setText(value)
                                 dialog.close()
                             else:
-                                raise Exception("Failed to update the record")
+                                raise Exception("Не удалось изменить запись")
                         except Exception as e:
-                            self.showErrorDialog(f"An error occurred while updating the record: {e}")
+                            self.showErrorDialog(f"Во время изменения записи произошла ошибка: {e}")
                     
                     submit_button.clicked.connect(update_record)
 
                     dialog.setLayout(layout)
                     dialog.exec()
                 else:
-                    self.showErrorDialog(f"Row not found for {primary_key_column} value.")
+                    self.showErrorDialog(f"Запись не найдена для значения {primary_key_column}.")
             else:
-                self.showErrorDialog("Primary key column or editable columns not found in the model class.")
+                self.showErrorDialog("В данной таблице нет редактируемых столбцов.")
 
 
 
@@ -196,7 +168,7 @@ class CrudOperations:
         self.refreshTable = CrudOperations.refreshTable
         selected_rows = table_widget.selectionModel().selectedRows()
         if not selected_rows:
-            QMessageBox.warning(table_widget, "No selection", "Please select the rows you want to delete.")
+            QMessageBox.warning(table_widget, "Не выбрано", "Пожалуйста, выберите запись для удаления.")
             return
 
         model_class = get_model_class(model_class_name)
@@ -212,7 +184,7 @@ class CrudOperations:
                         dal.delete(model_class, **identifier)
                         table_widget.removeRow(idx.row())
                     except IntegrityError as e:
-                        QMessageBox.critical(table_widget, "Error", f"An error occurred while deleting the record: {e}")
+                        QMessageBox.critical(table_widget, "Ошибка", f"Произошла ошибка при удалении записи: {e}")
 
                 self.refreshTable(self, model_class_name, table_widget)
 

@@ -53,3 +53,32 @@ LABELS = [  # Store labels and their respective data types
             ("accident_rate", "VARCHAR(150)", None), ("ID_management_company", "VARCHAR(150)", ManagementCompany),
             ("Land_area", "numeric", None), ("notes", "VARCHAR(150)", None),
             ("author", "VARCHAR(150)", None)]
+
+# Mapping between database column names and display names
+BASIC_FIELDS_LABELS = {
+                'ID_street': 'ID улицы',
+                'street_name': 'Название улицы',
+                'ID_type_construction': 'ID типа конструкции',
+                'type_construction_name': 'Название типа конструкции',
+                'ID_basic_project': 'ID базового проекта',
+                'basic_project_name': 'Название базового проекта',
+                'ID_appointment': 'ID назначения',
+                'appointment_name': 'Название назначения',
+                'ID_load_bearing_walls': 'ID несущих стен',
+                'load_bearing_walls_name': 'Название несущих стен',
+                'ID_building_roof': 'ID крыши',
+                'building_roof_name': 'Название крыши',
+                'ID_building_floor': 'ID пола',
+                'building_floor_name': 'Название пола',
+                'ID_facade': 'ID фасада',
+                'facade_name': 'Название фасада',
+                'ID_foundation': 'ID фундамента',
+                'foundation_name': 'Название фундамента',
+                'ID_management_company': 'ID управляющей компании',
+                'management_company_name': 'Название управляющей компании',
+                'ID_wear_rate': 'ID износа',
+                'date': 'Дата',
+                'wear_rate_name': 'Название степени',
+                'ID_building': 'ID здания',
+                # Add more mappings as needed
+            }
