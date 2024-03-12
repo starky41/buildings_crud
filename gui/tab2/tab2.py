@@ -11,29 +11,38 @@ class Tab2(QWidget):
         self.setLayout(self.tab2Layout)
         self.tab2Layout.setSpacing(10)
 
-        buttonNames = [
-            "Street", "TypeConstruction", "BasicProject", "Appointment", "LoadBearingWalls", "BuildingRoof", "BuildingFloor", "Facade", "WearRate"  # Add other model names here
-        ]
+        # Define a mapping between display names and model names
+        self.model_name_mapping = {
+            "Улица": "Street", 
+            "Тип конструкции": "TypeConstruction", 
+            "Типовой проект": "BasicProject", 
+            "Назначение": "Appointment", 
+            "Несущие стены": "LoadBearingWalls", 
+            "Крыша": "BuildingRoof", 
+            "Перекрытия": "BuildingFloor", 
+            "Фасад": "Facade", 
+            "Износ": "WearRate"
+        }
 
-        for index, name in enumerate(buttonNames):
-            button = QPushButton(name)
+        for index, display_name in enumerate(self.model_name_mapping.keys()):
+            button = QPushButton(display_name)
             button.setFixedSize(150, 40)
             row, col = divmod(index, 3)
-            button.clicked.connect(lambda _, name=name: self.openCrudWindow(name))
+            button.clicked.connect(lambda _, name=display_name: self.openCrudWindow(name))
             self.tab2Layout.addWidget(button, row, col)
 
     def initUI(self):
         pass  # No need for this method as it doesn't add any additional functionality
 
-    def openCrudWindow(self, name):
-        model_class = get_model_class(name)
+    def openCrudWindow(self, display_name):
+        model_name = self.model_name_mapping.get(display_name)
+        model_class = get_model_class(model_name)
         if model_class:
-            crud_window = CrudWindow(name)  # Pass the model class name as a string
+            crud_window = CrudWindow(model_name)  # Pass the model class name as a string
             self.windows.append(crud_window)  # Keep track of the opened windows
             crud_window.show()
         else:
-            print(f"Model class for {name} not found")
-
+            print(f"Model class for {model_name} not found")
 
     def addModelButton(self, model_class):
         button = QPushButton(f'Open {model_class.__name__} CRUD')
