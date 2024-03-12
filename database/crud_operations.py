@@ -8,7 +8,6 @@ class CrudOperations:
     def __init__(self, db_session):
         self.db_session = db_session
         self.dal = DataAccessLayer(db_session)
-        
 
     def createItem(self, model_class_name, table_widget, layout):
         self.refreshTable = CrudOperations.refreshTable
@@ -26,23 +25,56 @@ class CrudOperations:
                 self.showErrorDialog(str(e))
                 db_session.rollback()
             except IntegrityError:
-                self.showErrorDialog("The value already exists in the database")
+                self.showErrorDialog("Значение уже существует в базе данных")
                 db_session.rollback()
             else:
                 self.refreshTable(self, model_class_name, table_widget)
                 self.clearLineEdits(self, columns, layout)
-    
+
     def refreshTable(self, model_class_name, table_widget):
         self.addUpdateButton = CrudOperations.addUpdateButton
         model_class = get_model_class(model_class_name)
         if model_class:
             table_widget.clear()
-            with engine.connect() as connection:  # Change this line
+            with engine.connect() as connection:
                 result = connection.execute(model_class.__table__.select())
                 rows = result.fetchall()
 
             table_widget.setRowCount(len(rows))
             table_widget.setColumnCount(len(model_class.__table__.columns))
+
+            # Mapping between database column names and display names
+            display_names = {
+                'ID_street': 'ID улицы',
+                'street_name': 'Название улицы',
+                'ID_type_construction': 'ID типа конструкции',
+                'type_construction_name': 'Название типа конструкции',
+                'ID_basic_project': 'ID базового проекта',
+                'basic_project_name': 'Название базового проекта',
+                'ID_appointment': 'ID назначения',
+                'appointment_name': 'Название назначения',
+                'ID_load_bearing_walls': 'ID несущих стен',
+                'load_bearing_walls_name': 'Название несущих стен',
+                'ID_building_roof': 'ID крыши',
+                'building_roof_name': 'Название крыши',
+                'ID_building_floor': 'ID пола',
+                'building_floor_name': 'Название пола',
+                'ID_facade': 'ID фасада',
+                'facade_name': 'Название фасада',
+                'ID_foundation': 'ID фундамента',
+                'foundation_name': 'Название фундамента',
+                'ID_management_company': 'ID управляющей компании',
+                'management_company_name': 'Название управляющей компании',
+                'ID_wear_rate': 'ID износа',
+                'date': 'Дата',
+                'wear_rate_name': 'Название степени',
+                'ID_building': 'ID здания',
+                # Add more mappings as needed
+            }
+
+            # Translate column names to display names
+            header_labels = [display_names.get(col.name, col.name) for col in model_class.__table__.columns]
+            table_widget.setHorizontalHeaderLabels(header_labels)
 
             for row_idx, row in enumerate(rows):
                 for col_idx, col in enumerate(row):
@@ -50,8 +82,7 @@ class CrudOperations:
                     table_widget.setItem(row_idx, col_idx, item)
                 self.addUpdateButton(self, row_idx, table_widget, model_class_name)
 
-            headers = [str(col) for col in model_class.__table__.columns.keys()]
-            table_widget.setHorizontalHeaderLabels(headers)
+
 
 
     def addUpdateButton(self, row_idx, table_widget, model_class_name):
